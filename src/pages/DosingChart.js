@@ -15,10 +15,12 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import SaveIcon from '@mui/icons-material/Save';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
+import useDocumentTitle from '../utils/useDocumentTitle';
 
 const CALC_STORAGE_KEY = 'rw_calc_session';
 
 export default function DosingChart() {
+  useDocumentTitle('Dosing Chart');
   const { user } = useAuth();
   const [tab, setTab] = useState(0);
   const [meta, setMeta] = useState({ flows: [], heads: [] });

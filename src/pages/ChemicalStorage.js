@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
+import useDocumentTitle from '../utils/useDocumentTitle';
 import { useAuth } from '../context/AuthContext';
 import { downloadCsv, timestampedFilename } from '../utils/csvExport';
 import {
@@ -351,6 +352,7 @@ export default function ChemicalStorage() {
   };
 
   const { plantId } = useParams();
+  useDocumentTitle(`${plantId} Chemical Storage`);
   const currentPlant = plantId || 'Palmiet';
   const isEikenhof = currentPlant.toLowerCase() === 'eikenhof';
   const activeLimit = activeLimitFor(currentPlant);

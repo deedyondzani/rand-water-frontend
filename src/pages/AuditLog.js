@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
+import useDocumentTitle from '../utils/useDocumentTitle';
 import {
   Box, Typography, Card, CardContent, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Paper, TextField, Button,
@@ -65,6 +66,7 @@ const fmtFull = (ts) => {
 
 export default function AuditLog() {
   const { plantId } = useParams();
+  useDocumentTitle(`${plantId} Audit Log`);
 
   const [selectedDate, setSelectedDate] = useState(todayStr());
   const [rows, setRows] = useState([]);

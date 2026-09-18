@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
+import useDocumentTitle from '../utils/useDocumentTitle';
 import { useAuth } from '../context/AuthContext';
 import { downloadCsv, timestampedFilename } from '../utils/csvExport';
 import {
@@ -204,6 +205,7 @@ export default function EngineRooms() {
   };
 
   const { plantId } = useParams();
+  useDocumentTitle(`${plantId} Engine Rooms`);
   const plantKey = (plantId || '').toLowerCase();
   const isEikenhof = plantKey === 'eikenhof';
   const designCapacity = resolveDesignCapacity(plantId);

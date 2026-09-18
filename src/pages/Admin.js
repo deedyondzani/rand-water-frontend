@@ -20,6 +20,7 @@ import SupervisedUserCircleIcon from '@mui/icons-material/SupervisedUserCircle';
 import BuildCircleIcon from '@mui/icons-material/BuildCircle';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
+import useDocumentTitle from '../utils/useDocumentTitle';
 
 const PLANTS = ['Palmiet', 'Eikenhof', 'Zwartkopjes', 'Mapleton'];
 
@@ -671,6 +672,7 @@ function ActiveUsersTab() {
 // MAIN ADMIN PAGE
 // ============================================================
 export default function Admin() {
+  useDocumentTitle('Admin');
   const { isAdmin, isSupervisor } = useAuth();
   const [tab, setTab] = useState(0);
 

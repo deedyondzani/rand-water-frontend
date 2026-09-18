@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
+import useDocumentTitle from '../utils/useDocumentTitle';
 import {
   Box, Typography, Paper, TextField, Select, MenuItem, FormControl,
   InputLabel, Button, Stack, Table, TableBody, TableCell, TableContainer,
@@ -23,6 +24,7 @@ const CELL_W = 68;
 
 export default function QualityData() {
   const { plantId } = useParams();
+  useDocumentTitle(`${plantId} Quality Data`);
   const { user, isReadOnly } = useAuth();
   const readOnly = isReadOnly();
 

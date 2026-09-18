@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
+import useDocumentTitle from '../utils/useDocumentTitle';
 import {
   Box, Typography, Paper, Button, Stack, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Alert, Chip, CircularProgress,
@@ -23,6 +24,7 @@ const BIG_W = 130;
 
 export default function ProcessDosing() {
   const { plantId } = useParams();
+  useDocumentTitle(`${plantId} Process Dosing`);
   const { user, isReadOnly } = useAuth();
   const readOnly = isReadOnly();
 

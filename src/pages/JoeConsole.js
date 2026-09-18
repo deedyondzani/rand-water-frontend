@@ -19,8 +19,10 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
+import useDocumentTitle from '../utils/useDocumentTitle';
 
 export default function JoeConsole() {
+  useDocumentTitle('Joe Console');
   const { user } = useAuth();
 
   const [health, setHealth] = useState(null);

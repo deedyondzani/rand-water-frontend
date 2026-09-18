@@ -16,9 +16,11 @@ import SpeedIcon from '@mui/icons-material/Speed';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import api from '../api/axios';
+import useDocumentTitle from '../utils/useDocumentTitle';
 
 export default function Dashboard() {
   const { plantId } = useParams();
+  useDocumentTitle(`${plantId} Dashboard`);
   const currentPlant = plantId || 'Palmiet';
   const navigate = useNavigate();
 
