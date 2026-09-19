@@ -1,12 +1,8 @@
 import axios from 'axios';
 
-// In dev: proxy handles /api/* → https://rand-water-backend.onrender.com
-// In prod: we need the full URL
-const API_BASE = process.env.REACT_APP_API_URL || '';
-
 const api = axios.create({
-  baseURL: API_BASE,
-  timeout: 90000,  // 90s — accommodates Render free-tier cold start
+  baseURL: process.env.REACT_APP_API_URL || '',
+  timeout: 15000,
 });
 
 api.interceptors.request.use(
@@ -24,12 +20,12 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const status = error.response?.status;
-    const sentBearer = error.config?.headers?.Authorization?.startsWith?.('Bearer ');
-    if (status === 401 && sentBearer && window.location.pathname !== '/login') {
-      localStorage.removeItem('rw_token');
-      localStorage.removeItem('rw_user');
-      window.location.href = '/login';
+    if (error.response && error.response.status === 401) {
+      if (window.location.pathname !== '/login') {
+        localStorage.removeItem('rw_token');
+        localStorage.removeItem('rw_user');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
