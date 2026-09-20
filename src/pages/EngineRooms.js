@@ -220,10 +220,16 @@ export default function EngineRooms() {
   const [pumpSeconds, setPumpSeconds] = useState({});
   const [destinationMap, setDestinationMap] = useState({});
   const timerRef = useRef(null);
+  const pendingPumpsRef = useRef(new Set());
+  const pumpsRef = useRef([]);
+  const prevStatusRef = useRef({});
 
   const [warningDialogOpen, setWarningDialogOpen] = useState(false);
   const [warningMessage, setWarningMessage] = useState('');
   const [pendingPumpId, setPendingPumpId] = useState(null);
+
+  // Keep a ref to current pumps for the poll-skip logic
+  useEffect(() => { pumpsRef.current = pumps; }, [pumps]);
 
   const plantTheme = getPlantTheme(plantId);
 
@@ -236,21 +242,36 @@ export default function EngineRooms() {
 
       const fetched = response.data;
 
-      // Sync tripped / maintenance maps from backend truth
+      // Sync tripped / maintenance maps — but skip pumps with in-flight PUTs
       const newTripped = {};
       const newMaint = {};
       fetched.forEach((p) => {
+        if (pendingPumpsRef.current.has(p.id)) return;
         newTripped[p.id] = p.status === 'Tripped';
         newMaint[p.id] = p.status === 'Maintenance';
       });
-      setTrippedMap(newTripped);
-      setMaintenanceMap(newMaint);
+      setTrippedMap((prev) => ({ ...prev, ...newTripped }));
+      setMaintenanceMap((prev) => ({ ...prev, ...newMaint }));
 
-      // Apply destination override for any in-flight PUT
-      const data = fetched.map((p) => ({
-        ...p,
-        destination: destinationMap[p.id] || p.destination || 'Whiteridge',
-      }));
+      // For pumps with pending PUTs, keep the local (optimistic) state
+      const data = fetched.map((p) => {
+        if (pendingPumpsRef.current.has(p.id)) {
+          const local = pumpsRef.current.find((lp) => lp.id === p.id);
+          if (local) {
+            return {
+              ...p,
+              status: local.status,
+              flowRate: local.flowRate,
+              runningTime: local.runningTime,
+              destination: destinationMap[p.id] || local.destination,
+            };
+          }
+        }
+        return {
+          ...p,
+          destination: destinationMap[p.id] || p.destination || 'Whiteridge',
+        };
+      });
 
       setPumps(data);
       setLoading(false);
@@ -276,9 +297,18 @@ export default function EngineRooms() {
     setPumpSeconds((prev) => {
       const next = { ...prev };
       pumps.forEach((p) => {
-        if (next[p.id] === undefined) {
-          next[p.id] = p.status === 'Running' ? parseRunningTime(p.runningTime) : 0;
+        const lastStatus = prevStatusRef.current[p.id];
+        const currentStatus = p.status;
+        const backendSeconds = parseRunningTime(p.runningTime);
+
+        if (lastStatus === undefined) {
+          next[p.id] = backendSeconds;
+        } else if (lastStatus !== currentStatus) {
+          next[p.id] = backendSeconds;
+        } else if (currentStatus !== 'Running') {
+          next[p.id] = backendSeconds;
         }
+        prevStatusRef.current[p.id] = currentStatus;
       });
       return next;
     });
@@ -375,12 +405,13 @@ export default function EngineRooms() {
         p.id === pumpId ? { ...p, status: newStatus, flowRate: flow, runningTime: '0h 0m 0s' } : p
       )
     );
-    setPumpSeconds((prev) => ({ ...prev, [pumpId]: 0 }));
-
+    pendingPumpsRef.current.add(pumpId);
     try {
       await api.put(`/api/pumps/${pumpId}/status`, { status: newStatus });
     } catch (err) {
       console.warn('Pump status persist failed', err);
+    } finally {
+      pendingPumpsRef.current.delete(pumpId);
     }
   };
 
@@ -413,12 +444,13 @@ export default function EngineRooms() {
         p.id === pumpId ? { ...p, status: newStatus, flowRate: 0, runningTime: '0h 0m 0s' } : p
       )
     );
-    setPumpSeconds((s) => ({ ...s, [pumpId]: 0 }));
-
+    pendingPumpsRef.current.add(pumpId);
     try {
       await api.put(`/api/pumps/${pumpId}/status`, { status: newStatus });
     } catch (err) {
       console.warn('Trip persist failed', err);
+    } finally {
+      pendingPumpsRef.current.delete(pumpId);
     }
   };
 
@@ -438,12 +470,13 @@ export default function EngineRooms() {
         p.id === pumpId ? { ...p, status: newStatus, flowRate: 0, runningTime: '0h 0m 0s' } : p
       )
     );
-    setPumpSeconds((s) => ({ ...s, [pumpId]: 0 }));
-
+    pendingPumpsRef.current.add(pumpId);
     try {
       await api.put(`/api/pumps/${pumpId}/status`, { status: newStatus });
     } catch (err) {
       console.warn('Maintenance persist failed', err);
+    } finally {
+      pendingPumpsRef.current.delete(pumpId);
     }
   };
 
