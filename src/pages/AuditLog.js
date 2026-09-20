@@ -6,13 +6,17 @@ import {
   TableContainer, TableHead, TableRow, Paper, TextField, Button,
   Chip, Stack, FormControl, InputLabel, Select, MenuItem,
   CircularProgress, IconButton, Tooltip, TablePagination, Alert,
+  Dialog, DialogTitle, DialogContent, DialogActions,
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import DownloadIcon from '@mui/icons-material/Download';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import TodayIcon from '@mui/icons-material/Today';
+import CommentIcon from '@mui/icons-material/Comment';
+import AddCommentIcon from '@mui/icons-material/AddComment';
 import api from '../api/axios';
+import { useAuth } from '../context/AuthContext';
 
 const EVENT_COLORS = {
   LOGIN: '#e8f5e9', LOGOUT: '#eceff1', PASSWORD_CHANGED: '#e1bee7',
@@ -80,6 +84,35 @@ export default function AuditLog() {
   const [totalElements, setTotalElements] = useState(0);
   const [newDayAlert, setNewDayAlert] = useState(false);
   const lastFetchDate = useRef(selectedDate);
+
+  const { isAdmin, isOperator } = useAuth();
+  const canNote = isAdmin() || isOperator();
+
+  const [noteDialog, setNoteDialog] = useState({ open: false, row: null, text: '' });
+  const [noteSaving, setNoteSaving] = useState(false);
+
+  const openNoteDialog = (row) => {
+    setNoteDialog({ open: true, row, text: row.note || '' });
+  };
+  const closeNoteDialog = () =>
+    setNoteDialog({ open: false, row: null, text: '' });
+
+  const saveNote = async () => {
+    if (!noteDialog.row) return;
+    setNoteSaving(true);
+    try {
+      await api.patch(`/api/audit-log/${noteDialog.row.logId}/note`, {
+        note: noteDialog.text,
+      });
+      closeNoteDialog();
+      fetchData();
+    } catch (err) {
+      console.error('Note save failed', err);
+      setError(err.response?.data?.error || 'Could not save note');
+    } finally {
+      setNoteSaving(false);
+    }
+  };
 
   useEffect(() => {
     const check = () => {
@@ -252,6 +285,7 @@ export default function AuditLog() {
                     <TableCell sx={{ color: 'white', fontWeight: 'bold', bgcolor: '#003366' }}>Event</TableCell>
                     <TableCell sx={{ color: 'white', fontWeight: 'bold', bgcolor: '#003366' }}>Details</TableCell>
                     <TableCell sx={{ color: 'white', fontWeight: 'bold', bgcolor: '#003366' }}>IP</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold', bgcolor: '#003366' }}>Note</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -270,6 +304,23 @@ export default function AuditLog() {
                       <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem', color: '#666' }}>
                         {row.ipAddress || '--'}
                       </TableCell>
+                      <TableCell>
+                        {row.note ? (
+                          <Tooltip title={`${row.noteBy || '-'} | ${row.noteAt ? new Date(row.noteAt).toLocaleString('en-ZA') : ''}\n${row.note}`}>
+                            <IconButton size="small" onClick={() => canNote && openNoteDialog(row)} disabled={!canNote}>
+                              <CommentIcon fontSize="small" sx={{ color: '#003366' }} />
+                            </IconButton>
+                          </Tooltip>
+                        ) : canNote ? (
+                          <Tooltip title="Add note">
+                            <IconButton size="small" onClick={() => openNoteDialog(row)}>
+                              <AddCommentIcon fontSize="small" sx={{ color: '#999' }} />
+                            </IconButton>
+                          </Tooltip>
+                        ) : (
+                          <Typography variant="caption" color="textSecondary">-</Typography>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -285,6 +336,42 @@ export default function AuditLog() {
           </>
         )}
       </Paper>
+
+      <Dialog open={noteDialog.open} onClose={closeNoteDialog} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ color: '#003366', fontWeight: 'bold' }}>
+          {noteDialog.row?.note ? 'Edit Note' : 'Add Note'}
+          <Typography variant="caption" sx={{ display: 'block', color: '#666' }}>
+            Log #{noteDialog.row?.logId} - {noteDialog.row?.eventType} - {noteDialog.row?.username}
+          </Typography>
+        </DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            multiline
+            rows={5}
+            fullWidth
+            value={noteDialog.text}
+            onChange={(e) => setNoteDialog((s) => ({ ...s, text: e.target.value }))}
+            placeholder="Add your comment, observation, or follow-up..."
+            inputProps={{ maxLength: 2000 }}
+            sx={{ mt: 1 }}
+          />
+          <Typography variant="caption" color="textSecondary">
+            {noteDialog.text.length}/2000
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeNoteDialog}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={saveNote}
+            disabled={noteSaving || !noteDialog.text.trim()}
+            sx={{ bgcolor: '#003366' }}
+          >
+            {noteSaving ? 'Saving...' : 'Save Note'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

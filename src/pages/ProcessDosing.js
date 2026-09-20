@@ -194,7 +194,6 @@ export default function ProcessDosing() {
       await api.post('/api/audit-log', {
         eventType: 'PROCESS_DOSING_SAVE',
         plantName: plantId,
-        username: user?.username || 'admin',
         details: `${plantId} Process Dosing saved for ${shiftType} ${shift} on ${date}`,
       });
     } catch (err) {

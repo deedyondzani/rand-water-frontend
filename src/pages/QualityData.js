@@ -18,6 +18,7 @@ import { getPlantLines } from '../config/plantConfig';
 import {
   SHIFTS_FOR, getTimeSlots, todayStr,
   loadQualityData, saveQualityData, setActiveShift,
+  loadProcessDosing,
 } from '../utils/shiftUtils';
 
 const CELL_W = 68;
@@ -91,7 +92,6 @@ export default function QualityData() {
       await api.post('/api/audit-log', {
         eventType: 'QUALITY_SAVE',
         plantName: plantId,
-        username: user?.username || 'admin',
         details: `${plantId} Quality Data saved for ${shiftType} ${shift} on ${date}`,
       });
     } catch (err) {
@@ -226,6 +226,8 @@ export default function QualityData() {
   };
 
   const handleExportPDF = () => {
+    const dosing = loadProcessDosing(plantId, date, shiftType, shift);
+
     exportQualityPDF({
       plantId,
       date,
@@ -240,8 +242,10 @@ export default function QualityData() {
       supervisorName,
       supervisorNumber,
       comments,
+      processDosingRows: dosing?.rows || null,
+      processDosingIncomingLines: lines.incoming,
     });
-    setStatus({ type: 'success', text: 'PDF exported' });
+    setStatus({ type: 'success', text: 'PDF exported (Quality + Process Dosing)' });
     setTimeout(() => setStatus(null), 3000);
   };
 
