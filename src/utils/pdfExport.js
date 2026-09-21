@@ -118,6 +118,57 @@ export function exportQualityPDF({
 
   y = doc.lastAutoTable.finalY + 8;
 
+  // ---- Process Data section (same page as Quality grid) ----
+  if (processDosingRows && processDosingIncomingLines && processDosingIncomingLines.length > 0) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(0, 0, 0);
+    doc.text('Process Data', 15, y);
+    y += 3;
+
+    const dosingHeaders = [
+      'Lines', 'Magflow', 'Free Cl2', 'Diff', 'Time',
+      'Cl2 Req', 'Cl2 Act', 'Diff Cl2',
+      'NH\u2083 Req\n(L/h)', 'NH\u2083 Act\n(L/h)', 'Diff NH\u2083',
+    ];
+
+    const dosingBody = processDosingIncomingLines.map((line) => [
+      line,
+      processDosingRows[`${line}_magflow`] || '',
+      processDosingRows[`${line}_freeCl2`] || '',
+      processDosingRows[`${line}_diffFree`] || '',
+      processDosingRows[`${line}_time`]    || '',
+      processDosingRows[`${line}_cl2Req`]  || '',
+      processDosingRows[`${line}_cl2Act`]  || '',
+      processDosingRows[`${line}_diffCl2`] || '',
+      processDosingRows[`${line}_nh3Req`]  || '',
+      processDosingRows[`${line}_nh3Act`]  || '',
+      processDosingRows[`${line}_diffNh3`] || '',
+    ]);
+
+    autoTable(doc, {
+      startY: y,
+      head: [dosingHeaders],
+      body: dosingBody,
+      theme: 'grid',
+      styles: { fontSize: 7, cellPadding: 1, lineColor: BORDER, lineWidth: 0.1, halign: 'center' },
+      headStyles: { fillColor: HEADER, textColor: NAVY, fontStyle: 'bold', halign: 'center', fontSize: 7 },
+      columnStyles: { 0: { fontStyle: 'bold', halign: 'center', cellWidth: 20 } },
+      margin: { left: 10, right: 10 },
+    });
+
+    y = doc.lastAutoTable.finalY + 3;
+
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(7);
+    doc.setTextColor(80, 80, 80);
+    doc.text('Status: +X Above Chart  |  -X Below Chart  |  0.00 On Target', 15, y);
+    y += 5;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
+  }
+
   // ---- Sign-offs ----
   doc.setFontSize(9);
   doc.setTextColor(0, 0, 0);
@@ -148,69 +199,6 @@ export function exportQualityPDF({
   const commentLines = doc.splitTextToSize(comments || ' ', pageW - 30);
   doc.text(commentLines, 15, y);
   y += commentLines.length * 4 + 4;
-
-  // ---- Process Dosing section (page 2) ----
-  if (processDosingRows && processDosingIncomingLines && processDosingIncomingLines.length > 0) {
-    doc.addPage();
-    let y2 = 12;
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.setTextColor(...NAVY);
-    doc.text('RAND WATER - PROCESS DOSING SHEET', pageW / 2, y2, { align: 'center' });
-    y2 += 6;
-
-    doc.setFontSize(10);
-    doc.setTextColor(80, 80, 80);
-    doc.text(`${plantId.toUpperCase()} - INCOMING RAW WATER DOSING`, pageW / 2, y2, { align: 'center' });
-    y2 += 5;
-
-    doc.setFontSize(9);
-    doc.setTextColor(0, 0, 0);
-    doc.text(`Date: ${date}    Shift: ${shiftType} / ${shift}`, pageW / 2, y2, { align: 'center' });
-    y2 += 8;
-
-    const dosingHeaders = [
-      'Lines', 'Magflow\n(m3/h)', 'Free Cl2\n(mg/L)', 'Diff\n(1.9 - Cl2)', 'Time',
-      'Cl2 Req\n(kg/h)', 'Cl2 Act\n(kg/h)', 'Diff Cl2',
-      'NH3 Req\n(kg/h)', 'NH3 Act\n(kg/h)', 'Diff NH3', 'SPC Comments',
-    ];
-
-    const dosingBody = processDosingIncomingLines.map((line) => [
-      line,
-      processDosingRows[`${line}_magflow`] || '',
-      processDosingRows[`${line}_freeCl2`] || '',
-      processDosingRows[`${line}_diffFree`] || '',
-      processDosingRows[`${line}_time`]    || '',
-      processDosingRows[`${line}_cl2Req`]  || '',
-      processDosingRows[`${line}_cl2Act`]  || '',
-      processDosingRows[`${line}_diffCl2`] || '',
-      processDosingRows[`${line}_nh3Req`]  || '',
-      processDosingRows[`${line}_nh3Act`]  || '',
-      processDosingRows[`${line}_diffNh3`] || '',
-      processDosingRows[`${line}_comments`]|| '',
-    ]);
-
-    autoTable(doc, {
-      startY: y2,
-      head: [dosingHeaders],
-      body: dosingBody,
-      theme: 'grid',
-      styles: { fontSize: 7, cellPadding: 1.2, lineColor: BORDER, lineWidth: 0.1, halign: 'center' },
-      headStyles: { fillColor: NAVY, textColor: 255, fontStyle: 'bold', halign: 'center', fontSize: 7 },
-      alternateRowStyles: { fillColor: ZEBRA },
-      columnStyles: {
-        0:  { fontStyle: 'bold', cellWidth: 20 },
-        11: { halign: 'left', cellWidth: 40 },
-      },
-      margin: { left: 10, right: 10 },
-    });
-
-    y2 = doc.lastAutoTable.finalY + 6;
-    doc.setFontSize(7);
-    doc.setTextColor(120, 120, 120);
-    doc.text('Status: +X Above Chart  |  -X Below Chart  |  0.00 On Target', 15, y2);
-  }
 
   // ---- Footer ----
   doc.setFontSize(7);
@@ -257,7 +245,7 @@ export function exportProcessDosingPDF({
   const headers = [
     'Lines', 'Magflow\n(m³/h)', 'Free Cl₂\n(mg/L)', 'Diff\n(1.9 - Cl₂)', 'Time',
     'Cl₂ Req\n(kg/h)', 'Cl₂ Act\n(kg/h)', 'Diff Cl₂',
-    'NH₃ Req\n(kg/h)', 'NH₃ Act\n(kg/h)', 'Diff NH₃', 'SPC Comments',
+    'NH₃ Req\n(L/h)', 'NH₃ Act\n(L/h)', 'Diff NH₃',
   ];
 
   const body = incomingLines.map((line) => [

@@ -82,39 +82,29 @@ export default function ProcessDosing() {
 
   const getField = (key) => rows[key] || '';
 
-  // Arrow navigation
-  const fieldOrder = [];
+  // Arrow navigation — editable fields only, in reading order
+  const editableKeys = [];
   incoming.forEach((line) => {
-    fieldOrder.push(`${line}_magflow`);
-    fieldOrder.push(`${line}_freeCl2`);
-    fieldOrder.push(`${line}_diffFree`);
-    fieldOrder.push(`${line}_time`);
-    fieldOrder.push(`${line}_cl2Req`);
-    fieldOrder.push(`${line}_cl2Act`);
-    fieldOrder.push(`${line}_diffCl2`);
-    fieldOrder.push(`${line}_nh3Req`);
-    fieldOrder.push(`${line}_nh3Act`);
-    fieldOrder.push(`${line}_diffNh3`);
-    fieldOrder.push(`${line}_comments`);
+    editableKeys.push(`${line}_magflow`);
+    editableKeys.push(`${line}_cl2Act`);
+    editableKeys.push(`${line}_nh3Act`);
+    editableKeys.push(`${line}_comments`);
   });
 
   const handleKeyDown = (e, key) => {
-    let target = null;
-    const idx = fieldOrder.indexOf(key);
+    const NAV = ['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown', 'Enter'];
+    if (!NAV.includes(e.key)) return;
+    e.preventDefault();
+    const idx = editableKeys.indexOf(key);
     if (idx < 0) return;
-    if (e.key === 'ArrowRight') { target = fieldOrder[idx + 1]; e.preventDefault(); }
-    else if (e.key === 'ArrowLeft') { target = fieldOrder[idx - 1]; e.preventDefault(); }
-    else if (e.key === 'ArrowDown' || e.key === 'Enter') {
-      // Jump down by columns-per-row = 11
-      const targetIdx = idx + 11;
-      if (targetIdx < fieldOrder.length) { target = fieldOrder[targetIdx]; e.preventDefault(); }
-    } else if (e.key === 'ArrowUp') {
-      const targetIdx = idx - 11;
-      if (targetIdx >= 0) { target = fieldOrder[targetIdx]; e.preventDefault(); }
-    }
-    if (target && inputRefs.current[target]) {
-      inputRefs.current[target].focus();
-      inputRefs.current[target].select();
+    const dir = (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'Enter') ? 1 : -1;
+    for (let i = idx + dir; i >= 0 && i < editableKeys.length; i += dir) {
+      const target = inputRefs.current[editableKeys[i]];
+      if (target && !target.disabled && target.focus) {
+        target.focus();
+        if (target.select) target.select();
+        return;
+      }
     }
   };
 

@@ -46,6 +46,18 @@ export default function QualityData() {
 
   const timeSlots = getTimeSlots(shiftType, shift);
 
+  // Editable field keys in reading order (readonly fields excluded)
+  const editableKeys = [];
+  lines.incoming.forEach((line) => {
+    timeSlots.forEach((time) => editableKeys.push(`${line}_${time}_free`));
+  });
+  lines.outgoing.forEach((line) => {
+    timeSlots.forEach((time) => {
+      editableKeys.push(`${line}_${time}_free`);
+      editableKeys.push(`${line}_${time}_mono`);
+    });
+  });
+
   // Load on mount / shift change
   useEffect(() => {
     const saved = loadQualityData(plantId, date, shiftType, shift);
@@ -119,26 +131,20 @@ export default function QualityData() {
   };
 
   // Arrow-key navigation
-  const handleCellKeyDown = (e, rowIdx, colIdx, totalCols) => {
-    let target = null;
-    const map = inputRefs.current;
-    if (e.key === 'ArrowRight' || (e.key === 'Tab' && !e.shiftKey)) {
-      if (e.key === 'Tab') return;
-      e.preventDefault();
-      target = map[`${rowIdx}_${colIdx + 1}`];
-    } else if (e.key === 'ArrowLeft') {
-      e.preventDefault();
-      target = map[`${rowIdx}_${colIdx - 1}`];
-    } else if (e.key === 'ArrowDown' || e.key === 'Enter') {
-      e.preventDefault();
-      target = map[`${rowIdx + 1}_${colIdx}`];
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      target = map[`${rowIdx - 1}_${colIdx}`];
-    }
-    if (target && target.focus) {
-      target.focus();
-      if (target.select) target.select();
+  const handleCellKeyDown = (e, key) => {
+    const NAV = ['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown', 'Enter'];
+    if (!NAV.includes(e.key)) return;
+    e.preventDefault();
+    const idx = editableKeys.indexOf(key);
+    if (idx < 0) return;
+    const dir = (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'Enter') ? 1 : -1;
+    for (let i = idx + dir; i >= 0 && i < editableKeys.length; i += dir) {
+      const target = inputRefs.current[editableKeys[i]];
+      if (target && !target.disabled && target.focus) {
+        target.focus();
+        if (target.select) target.select();
+        return;
+      }
     }
   };
 
@@ -158,13 +164,13 @@ export default function QualityData() {
           <React.Fragment key={`${line}_${time}`}>
             <TableCell align="center" sx={{ p: 0.3 }}>
               <input
-                ref={(el) => { inputRefs.current[`${rowIdx}_${colIdx}`] = el; }}
+                ref={(el) => { inputRefs.current[`${line}_${time}_free`] = el; }}
                 value={getReading(line, time, 'free')}
                 onChange={(e) => setReadings((prev) => ({
                   ...prev,
                   [`${line}_${time}_free`]: e.target.value,
                 }))}
-                onKeyDown={(e) => handleCellKeyDown(e, rowIdx, colIdx)}
+                onKeyDown={(e) => handleCellKeyDown(e, `${line}_${time}_free`)}
                 disabled={readOnly}
                 style={{
                   width: CELL_W, textAlign: 'center', padding: '5px 2px',
@@ -177,13 +183,13 @@ export default function QualityData() {
             </TableCell>
             <TableCell align="center" sx={{ p: 0.3, bgcolor: monoDisabled ? '#eeeeee' : 'transparent' }}>
               <input
-                ref={(el) => { inputRefs.current[`${rowIdx}_${colIdx}`] = el; }}
+                ref={(el) => { inputRefs.current[`${line}_${time}_mono`] = el; }}
                 value={getReading(line, time, 'mono')}
                 onChange={(e) => setReadings((prev) => ({
                   ...prev,
                   [`${line}_${time}_mono`]: e.target.value,
                 }))}
-                onKeyDown={(e) => handleCellKeyDown(e, rowIdx, colIdx)}
+                onKeyDown={(e) => handleCellKeyDown(e, `${line}_${time}_mono`)}
                 disabled={readOnly || monoDisabled}
                 style={{
                   width: CELL_W, textAlign: 'center', padding: '5px 2px',
