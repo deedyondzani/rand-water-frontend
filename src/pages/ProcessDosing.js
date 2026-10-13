@@ -43,6 +43,7 @@ export default function ProcessDosing() {
   // Reload active shift info whenever plant changes
   useEffect(() => {
     setShiftInfo(getActiveShift(plantId));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plantId]);
 
   // Load saved process dosing + populate from quality data
@@ -217,14 +218,6 @@ export default function ProcessDosing() {
     setStatus({ type: 'info', text: 'Reloaded' });
     setTimeout(() => setStatus(null), 2000);
   };
-
-  const inputStyle = (w = CELL_W, isAuto = false, isVariance = false) => ({
-    width: w, textAlign: 'center', padding: '5px 2px',
-    border: '1px solid #cfd8dc', borderRadius: 3, fontSize: 12,
-    fontFamily: 'Consolas, monospace',
-    background: isAuto ? '#EBF0F5' : 'white',
-    color: isVariance ? varianceColor(getField('__dummy__')) : 'inherit',
-  });
 
   const renderInput = (key, width, opts = {}) => {
     const { isAuto = false, isVariance = false } = opts;

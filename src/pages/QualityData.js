@@ -78,6 +78,7 @@ export default function QualityData() {
     }
     // Announce this as the active shift for other pages
     setActiveShift(plantId, { date, shiftType, shift });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plantId, date, shiftType, shift]);
 
   const handleShiftTypeChange = (e) => {

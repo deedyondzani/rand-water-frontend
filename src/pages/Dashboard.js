@@ -89,6 +89,7 @@ export default function Dashboard() {
       setLoading(false);
       setError('Using demo data – API unavailable');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPlant]);
 
   useEffect(() => {

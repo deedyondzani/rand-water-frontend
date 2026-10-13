@@ -3,7 +3,7 @@ import {
   Box, Typography, Grid, Card, CardContent, Button, Divider,
   Chip, Stack, Paper, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, TextField, IconButton, Tooltip, Alert,
-  CircularProgress, LinearProgress, Avatar, List, ListItem,
+  CircularProgress, LinearProgress, List, ListItem,
   ListItemText, ListItemAvatar,
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -16,9 +16,7 @@ import HealingIcon from '@mui/icons-material/Healing';
 import SendIcon from '@mui/icons-material/Send';
 import RestoreIcon from '@mui/icons-material/Restore';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
-import PersonIcon from '@mui/icons-material/Person';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ErrorIcon from '@mui/icons-material/Error';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import useDocumentTitle from '../utils/useDocumentTitle';

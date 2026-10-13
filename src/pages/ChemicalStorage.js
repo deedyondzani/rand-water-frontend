@@ -5,8 +5,8 @@ import { useAuth } from '../context/AuthContext';
 import { downloadCsv, timestampedFilename } from '../utils/csvExport';
 import {
   Box, Typography, Grid, Card, CardContent, Button, Divider,
-  Chip, Tabs, Tab, LinearProgress, Paper, FormControl, InputLabel,
-  Select, MenuItem, CircularProgress, TextField, Stack, Tooltip,
+  Chip, Tabs, Tab, Paper, FormControl, InputLabel,
+  Select, MenuItem, CircularProgress, TextField, Stack,
 } from '@mui/material';
 import ScienceIcon from '@mui/icons-material/Science';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
@@ -405,7 +405,6 @@ export default function ChemicalStorage() {
   const [bulk, setBulk] = useState({ fullCount: 0, emptyCount: 0, ocCount: 0 });
   const [bulkLocal, setBulkLocal] = useState({ fullCount: 0, emptyCount: 0, ocCount: 0 });
   const [tankEtas, setTankEtas] = useState({});
-  const tankDebounceTimer = React.useRef({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const pendingCylRef = React.useRef(new Set());
@@ -457,6 +456,7 @@ export default function ChemicalStorage() {
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPlant, bulkKey]);
 
   useEffect(() => {
@@ -518,9 +518,6 @@ export default function ChemicalStorage() {
       targetIds.forEach(id => pendingCylRef.current.delete(id));
     }
   };
-
-  const resetBankToFull = (roomNumber) => setBankStatus(roomNumber, 'FULL');
-
   const resetDrumRoom = async (roomNumbers, drumRoomName) => {
     if (!window.confirm(`Reset all cylinders in ${drumRoomName} to FULL?`)) return;
     for (const r of roomNumbers) {

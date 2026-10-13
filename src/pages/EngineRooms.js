@@ -211,7 +211,7 @@ export default function EngineRooms() {
   const designCapacity = resolveDesignCapacity(plantId);
 
   const [pumps, setPumps] = useState([]);
-  const [pumpHealthMap, setPumpHealthMap] = useState({});
+  const [pumpHealthMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedTab, setSelectedTab] = useState('');
