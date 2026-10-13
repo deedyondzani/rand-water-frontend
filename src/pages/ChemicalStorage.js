@@ -375,9 +375,12 @@ export default function ChemicalStorage() {
   useDocumentTitle(`${plantId} Chemical Storage`);
   const currentPlant = plantId || 'Palmiet';
   const isEikenhof = currentPlant.toLowerCase() === 'eikenhof';
+  // Bulk storage key: for Eikenhof, split by plant (Top/Bottom)
+  const bulkKey = isEikenhof ? `Eikenhof-${eikenhofPlant}` : currentPlant;
   const activeLimit = activeLimitFor(currentPlant);
 
   const [subTab, setSubTab] = useState(0);
+  const [eikenhofPlant, setEikenhofPlant] = useState('Top'); // 'Top' or 'Bottom'
   const [cylinders, setCylinders] = useState([]);
   const [tanks, setTanks] = useState([]);
   const [bulk, setBulk] = useState({ fullCount: 0, emptyCount: 0, ocCount: 0 });
@@ -393,7 +396,7 @@ export default function ChemicalStorage() {
       const [cRes, tRes, bRes, eRes] = await Promise.all([
         api.get(`/api/chemical/cl2/${currentPlant}`),
         api.get(`/api/chemical/nh3/${currentPlant}`),
-        api.get(`/api/chemical/bulk/${currentPlant}`),
+        api.get(`/api/chemical/bulk/${bulkKey}`),
         api.get('/api/joe/tank-etas').catch(() => ({ data: { items: [] } })),
       ]);
       const pending = pendingCylRef.current;
@@ -431,7 +434,7 @@ export default function ChemicalStorage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPlant]);
+  }, [currentPlant, bulkKey]);
 
   useEffect(() => {
     setLoading(true);
@@ -515,7 +518,7 @@ export default function ChemicalStorage() {
     if (total > 80) { alert('Bulk storage max is 80 cylinders'); return; }
     setBulk(merged);
     try {
-      await api.put(`/api/chemical/bulk/${currentPlant}`, merged);
+      await api.put(`/api/chemical/bulk/${bulkKey}`, merged);
     } catch (err) { console.warn(err); fetchAll(); }
   };
 
@@ -928,7 +931,25 @@ export default function ChemicalStorage() {
               <WarehouseIcon color="primary" />
               <Typography variant="h6" sx={{ color: '#003366', fontWeight: 'bold' }}>
                 Cl₂ Bulk Storage Warehouse
+                {isEikenhof && (
+                  <Typography component="span" variant="caption" color="textSecondary" sx={{ ml: 1 }}>
+                    — {eikenhofPlant} Plant
+                  </Typography>
+                )}
               </Typography>
+              {isEikenhof && (
+                <FormControl size="small" sx={{ minWidth: 150, ml: 2 }}>
+                  <InputLabel>Chlorine Plant</InputLabel>
+                  <Select
+                    value={eikenhofPlant}
+                    label="Chlorine Plant"
+                    onChange={(e) => setEikenhofPlant(e.target.value)}
+                  >
+                    <MenuItem value="Top">Top Plant</MenuItem>
+                    <MenuItem value="Bottom">Bottom Plant</MenuItem>
+                  </Select>
+                </FormControl>
+              )}
             </Box>
             <Button variant="outlined" size="small" startIcon={<TableChartIcon />}
               onClick={exportBulkCsv}>
