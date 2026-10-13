@@ -405,15 +405,15 @@ export default function ChemicalStorage() {
         return Array.from(map.values());
       });
       setTanks(tRes.data || []);
-      const incoming = bRes.data || { fullCount: 0, emptyCount: 0, ocCount: 0 };
-      setBulk(incoming);
+      const incomingBulk = bRes.data || { fullCount: 0, emptyCount: 0, ocCount: 0 };
+      setBulk(incomingBulk);
       // Only sync local editor if user hasn't typed unsaved changes
       setBulkLocal(prev => {
         const isDirty =
           prev.fullCount !== bulk.fullCount ||
           prev.emptyCount !== bulk.emptyCount ||
           prev.ocCount !== bulk.ocCount;
-        return isDirty ? prev : incoming;
+        return isDirty ? prev : incomingBulk;
       });
 
       const etaMap = {};
