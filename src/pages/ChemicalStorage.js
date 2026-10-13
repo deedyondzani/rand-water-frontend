@@ -46,8 +46,8 @@ const activeLimitFor = (plant) => {
 const drumRoomFor = (plant, room) => {
   const p = (plant || '').toLowerCase();
   if (p === 'eikenhof') {
-    // Eikenhof: 2 DB rooms, but banks named by plant
-    return room === 1 ? 'Plant 1 (Top Plant)' : 'Plant 2 (Bottom Plant)';
+    // Eikenhof: rooms 1-2 = Top Plant, rooms 3-4 = Bottom Plant
+    return (room === 1 || room === 2) ? 'Plant 1 (Top Plant)' : 'Plant 2 (Bottom Plant)';
   }
   return room === 1 ? 'Drum Room 1' : 'Drum Room 2';
 };
@@ -57,12 +57,22 @@ const bankFor = (plant, room, slot) => {
   const bankIndex = slot <= 5 ? 0 : 1;   // 0 = first bank, 1 = second bank
 
   if (p === 'eikenhof') {
-    const names = room === 1 ? ['East Bank', 'West Bank'] : ['North Bank', 'South Bank'];
-    const offset = (room - 1) * 10;
+    // Eikenhof has 2 chlorine plants, each with 2 banks of 10 cylinders:
+    //   Room 1 → East Bank  (Top Plant)
+    //   Room 2 → West Bank  (Top Plant)
+    //   Room 3 → North Bank (Bottom Plant)
+    //   Room 4 → South Bank (Bottom Plant)
+    const banks = {
+      1: { group: 'Plant 1 (Top Plant)',    name: 'East Bank' },
+      2: { group: 'Plant 1 (Top Plant)',    name: 'West Bank' },
+      3: { group: 'Plant 2 (Bottom Plant)', name: 'North Bank' },
+      4: { group: 'Plant 2 (Bottom Plant)', name: 'South Bank' },
+    };
+    const meta = banks[room] || { group: 'Unknown', name: `Bank ${room}` };
     return {
-      group: drumRoomFor(plant, room),
-      name: names[bankIndex],
-      displayNumber: offset + slot,
+      group: meta.group,
+      name: meta.name,
+      displayNumber: slot,
     };
   }
   const letters = ['A', 'B', 'C', 'D'];
@@ -375,8 +385,6 @@ export default function ChemicalStorage() {
   useDocumentTitle(`${plantId} Chemical Storage`);
   const currentPlant = plantId || 'Palmiet';
   const isEikenhof = currentPlant.toLowerCase() === 'eikenhof';
-  // Bulk storage key: for Eikenhof, split by plant (Top/Bottom)
-  const bulkKey = isEikenhof ? `Eikenhof-${eikenhofPlant}` : currentPlant;
   const activeLimit = activeLimitFor(currentPlant);
 
   const [subTab, setSubTab] = useState(0);
@@ -390,6 +398,10 @@ export default function ChemicalStorage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const pendingCylRef = React.useRef(new Set());
+
+  // Bulk storage key: for Eikenhof, split by plant (Top/Bottom)
+  // MUST come after eikenhofPlant useState declaration
+  const bulkKey = isEikenhof ? `Eikenhof-${eikenhofPlant}` : currentPlant;
 
   const fetchAll = useCallback(async () => {
     try {
