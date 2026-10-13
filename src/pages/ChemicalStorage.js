@@ -84,16 +84,17 @@ function CylinderSVG({ number, status, size = 68 }) {
   const color = cylColor(status);
   const W = size;
   const H = size * 1.55;
+  const uid = String(status || '').replace(/[^a-zA-Z0-9]/g, '-');
   return (
     <svg width={W} height={H} viewBox="0 0 50 78" style={{ display: 'block' }}>
       {/* Drop shadow */}
       <defs>
-        <linearGradient id={`cylShade-${number}-${status}`} x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id={`cylShade-${number}-${uid}`} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stopColor="rgba(0,0,0,0.25)" />
           <stop offset="35%" stopColor="rgba(255,255,255,0.15)" />
           <stop offset="100%" stopColor="rgba(0,0,0,0.25)" />
         </linearGradient>
-        <linearGradient id={`cylHighlight-${number}-${status}`} x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id={`cylHighlight-${number}-${uid}`} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stopColor="rgba(255,255,255,0)" />
           <stop offset="40%" stopColor="rgba(255,255,255,0.55)" />
           <stop offset="100%" stopColor="rgba(255,255,255,0)" />
@@ -119,10 +120,10 @@ function CylinderSVG({ number, status, size = 68 }) {
       {/* Shading overlay */}
       <path
         d="M 10 21 Q 10 18 15 18 L 35 18 Q 40 18 40 21 L 40 68 Q 40 74 34 74 L 16 74 Q 10 74 10 68 Z"
-        fill={`url(#cylShade-${number}-${status})`}
+        fill={`url(#cylShade-${number}-${uid})`}
       />
       {/* Left highlight */}
-      <ellipse cx="16" cy="45" rx="3" ry="20" fill={`url(#cylHighlight-${number}-${status})`} opacity="0.6" />
+      <ellipse cx="16" cy="45" rx="3" ry="20" fill={`url(#cylHighlight-${number}-${uid})`} opacity="0.6" />
 
       {/* Number badge */}
       <circle cx="25" cy="46" r="9" fill="white" stroke={color} strokeWidth="1.5" />
@@ -149,6 +150,7 @@ function CylinderSVG({ number, status, size = 68 }) {
 function TankSVG({ level, maxLiters, status, width = 130 }) {
   const pct = maxLiters > 0 ? Math.max(0, Math.min(level / maxLiters, 1)) : 0;
   const color = TANK_COLORS[status] || '#003366';
+  const uid = String(status || '').replace(/[^a-zA-Z0-9]/g, '-');  // SVG-safe ID suffix
 
   // Tank geometry within viewBox 0 0 100 180
   const tankTopY = 25;
@@ -162,13 +164,13 @@ function TankSVG({ level, maxLiters, status, width = 130 }) {
   return (
     <svg width={width} height={height} viewBox="0 0 100 180" style={{ display: 'block' }}>
       <defs>
-        <linearGradient id={`tankShade-${status}`} x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id={`tankShade-${uid}`} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%"   stopColor="rgba(0,0,0,0.25)" />
           <stop offset="30%"  stopColor="rgba(255,255,255,0.35)" />
           <stop offset="60%"  stopColor="rgba(255,255,255,0.05)" />
           <stop offset="100%" stopColor="rgba(0,0,0,0.25)" />
         </linearGradient>
-        <clipPath id={`tankClip-${status}`}>
+        <clipPath id={`tankClip-${uid}`}>
           <rect x="20" y={tankTopY} width="60" height={tankH} />
         </clipPath>
       </defs>
@@ -184,7 +186,7 @@ function TankSVG({ level, maxLiters, status, width = 130 }) {
       <rect x="20" y={tankTopY} width="60" height={tankH} fill="#ECEFF1" />
 
       {/* Liquid fill */}
-      <g clipPath={`url(#tankClip-${status})`}>
+      <g clipPath={`url(#tankClip-${uid})`}>
         <rect x="20" y={fillY} width="60" height={fillH} fill={color} opacity="0.85" />
         {/* Liquid surface line */}
         {pct > 0.01 && pct < 0.99 && (
@@ -193,7 +195,7 @@ function TankSVG({ level, maxLiters, status, width = 130 }) {
       </g>
 
       {/* Shading overlay */}
-      <rect x="20" y={tankTopY} width="60" height={tankH} fill={`url(#tankShade-${status})`} />
+      <rect x="20" y={tankTopY} width="60" height={tankH} fill={`url(#tankShade-${uid})`} />
 
       {/* Top cap */}
       <ellipse cx="50" cy={tankTopY} rx="30" ry="9" fill="#B0BEC5" stroke="#607D8B" strokeWidth="1.2" />
