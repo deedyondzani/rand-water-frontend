@@ -98,53 +98,59 @@ const displayNumberFor = (plant, room, slot) => bankFor(plant, room, slot).displ
 // ============================================================
 function CylinderSVG({ number, status, size = 68 }) {
   const color = cylColor(status);
-  const W = size;
-  const H = size * 1.55;
+  // Horizontal orientation: swap width/height
+  const W = size * 1.55;
+  const H = size;
   const uid = String(status || '').replace(/[^a-zA-Z0-9]/g, '-');
   return (
-    <svg width={W} height={H} viewBox="0 0 50 78" style={{ display: 'block' }}>
-      {/* Drop shadow */}
+    <svg width={W} height={H} viewBox="0 0 78 50" style={{ display: 'block' }}>
       <defs>
-        <linearGradient id={`cylShade-${number}-${uid}`} x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id={`cylShade-${number}-${uid}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="rgba(0,0,0,0.25)" />
           <stop offset="35%" stopColor="rgba(255,255,255,0.15)" />
           <stop offset="100%" stopColor="rgba(0,0,0,0.25)" />
         </linearGradient>
-        <linearGradient id={`cylHighlight-${number}-${uid}`} x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id={`cylHighlight-${number}-${uid}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="rgba(255,255,255,0)" />
           <stop offset="40%" stopColor="rgba(255,255,255,0.55)" />
           <stop offset="100%" stopColor="rgba(255,255,255,0)" />
         </linearGradient>
       </defs>
 
-      {/* Valve stem */}
-      <rect x="22" y="0" width="6" height="4" fill="#455A64" />
-      {/* Valve body */}
-      <rect x="20" y="4" width="10" height="5" rx="1" fill="#546E7A" />
-      {/* Protective cap */}
-      <rect x="17" y="9" width="16" height="5" rx="1.5" fill="#37474F" />
-      {/* Neck */}
-      <rect x="21" y="14" width="8" height="4" fill="#607D8B" />
+      {/* Rotate the vertical design -90° to lie horizontal */}
+      <g transform="translate(0, 50) rotate(-90)">
+        {/* Valve stem */}
+        <rect x="22" y="0" width="6" height="4" fill="#455A64" />
+        {/* Valve body */}
+        <rect x="20" y="4" width="10" height="5" rx="1" fill="#546E7A" />
+        {/* Protective cap */}
+        <rect x="17" y="9" width="16" height="5" rx="1.5" fill="#37474F" />
+        {/* Neck */}
+        <rect x="21" y="14" width="8" height="4" fill="#607D8B" />
 
-      {/* Body — rounded shoulders */}
-      <path
-        d="M 10 21 Q 10 18 15 18 L 35 18 Q 40 18 40 21 L 40 68 Q 40 74 34 74 L 16 74 Q 10 74 10 68 Z"
-        fill={color}
-        stroke="#263238"
-        strokeWidth="1.2"
-      />
-      {/* Shading overlay */}
-      <path
-        d="M 10 21 Q 10 18 15 18 L 35 18 Q 40 18 40 21 L 40 68 Q 40 74 34 74 L 16 74 Q 10 74 10 68 Z"
-        fill={`url(#cylShade-${number}-${uid})`}
-      />
-      {/* Left highlight */}
-      <ellipse cx="16" cy="45" rx="3" ry="20" fill={`url(#cylHighlight-${number}-${uid})`} opacity="0.6" />
+        {/* Body */}
+        <path
+          d="M 10 21 Q 10 18 15 18 L 35 18 Q 40 18 40 21 L 40 68 Q 40 74 34 74 L 16 74 Q 10 74 10 68 Z"
+          fill={color}
+          stroke="#263238"
+          strokeWidth="1.2"
+        />
+        {/* Shading overlay */}
+        <path
+          d="M 10 21 Q 10 18 15 18 L 35 18 Q 40 18 40 21 L 40 68 Q 40 74 34 74 L 16 74 Q 10 74 10 68 Z"
+          fill={`url(#cylShade-${number}-${uid})`}
+        />
+        {/* Highlight */}
+        <ellipse cx="16" cy="45" rx="3" ry="20" fill={`url(#cylHighlight-${number}-${uid})`} opacity="0.6" />
 
-      {/* Number badge */}
-      <circle cx="25" cy="46" r="9" fill="white" stroke={color} strokeWidth="1.5" />
+        {/* Base ring */}
+        <ellipse cx="25" cy="74" rx="15" ry="2" fill="rgba(0,0,0,0.25)" />
+      </g>
+
+      {/* Number badge — outside rotation so text stays upright */}
+      <circle cx="46" cy="25" r="9" fill="white" stroke={color} strokeWidth="1.5" />
       <text
-        x="25" y="50"
+        x="46" y="29"
         textAnchor="middle"
         fontSize="10"
         fontWeight="bold"
@@ -153,9 +159,6 @@ function CylinderSVG({ number, status, size = 68 }) {
       >
         {number}
       </text>
-
-      {/* Base ring */}
-      <ellipse cx="25" cy="74" rx="15" ry="2" fill="rgba(0,0,0,0.25)" />
     </svg>
   );
 }
@@ -262,12 +265,14 @@ function TankSVG({ level, maxLiters, status, width = 130 }) {
 function MiniCylinder({ status }) {
   const color = CYL_COLORS[status];
   return (
-    <svg width="18" height="28" viewBox="0 0 30 46">
-      <rect x="12" y="0" width="6" height="3" fill="#455A64" />
-      <rect x="9" y="3" width="12" height="4" rx="1" fill="#37474F" />
-      <path d="M 6 10 Q 6 8 9 8 L 21 8 Q 24 8 24 10 L 24 40 Q 24 44 20 44 L 10 44 Q 6 44 6 40 Z"
-        fill={color} stroke="#263238" strokeWidth="0.8" />
-      <ellipse cx="10" cy="25" rx="1.5" ry="12" fill="rgba(255,255,255,0.4)" />
+    <svg width="28" height="18" viewBox="0 0 46 30">
+      <g transform="translate(0, 30) rotate(-90)">
+        <rect x="12" y="0" width="6" height="3" fill="#455A64" />
+        <rect x="9" y="3" width="12" height="4" rx="1" fill="#37474F" />
+        <path d="M 6 10 Q 6 8 9 8 L 21 8 Q 24 8 24 10 L 24 40 Q 24 44 20 44 L 10 44 Q 6 44 6 40 Z"
+          fill={color} stroke="#263238" strokeWidth="0.8" />
+        <ellipse cx="10" cy="25" rx="1.5" ry="12" fill="rgba(255,255,255,0.4)" />
+      </g>
     </svg>
   );
 }
