@@ -366,7 +366,7 @@ export default function JoeConsole() {
 
                 <Divider />
                 <Typography variant="caption" color="textSecondary">
-                  Auto-backup runs every 5 min · Health sampled every 30s
+                  Auto-backup runs every 1 hour · Health sampled every 30s
                 </Typography>
               </Stack>
             </CardContent>
