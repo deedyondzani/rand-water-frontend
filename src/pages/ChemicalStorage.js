@@ -291,6 +291,7 @@ function TankEditor({ tank, readOnly, onSave }) {
         label="Level (L)"
         value={editLevel}
         disabled={readOnly}
+        onFocus={(e) => e.target.select()}
         onChange={(e) => setEditLevel(e.target.value)}
         inputProps={{ min: 0, max: tank.maxLiters, step: 500 }}
         helperText={`Max ${tank.maxLiters.toLocaleString()} L · Saved: ${tank.level.toLocaleString()} L (${((tank.level / tank.maxLiters) * 100).toFixed(0)}%)`}
@@ -680,15 +681,30 @@ export default function ChemicalStorage() {
             <Stack spacing={2.5}>
               <TextField size="small" type="number" label="Full (Ready)" value={bulkLocal.fullCount}
                 disabled={readOnly}
-                onChange={(e) => updateBulkLocal({ fullCount: parseInt(e.target.value||'0',10) })}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const num = raw === '' ? 0 : parseInt(raw, 10);
+                  updateBulkLocal({ fullCount: Number.isNaN(num) ? 0 : num });
+                }}
                 inputProps={{ min: 0, max: 80 }} fullWidth />
               <TextField size="small" type="number" label="Empty" value={bulkLocal.emptyCount}
                 disabled={readOnly}
-                onChange={(e) => updateBulkLocal({ emptyCount: parseInt(e.target.value||'0',10) })}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const num = raw === '' ? 0 : parseInt(raw, 10);
+                  updateBulkLocal({ emptyCount: Number.isNaN(num) ? 0 : num });
+                }}
                 inputProps={{ min: 0, max: 80 }} fullWidth />
               <TextField size="small" type="number" label="Out of Commission (O/C)" value={bulkLocal.ocCount}
                 disabled={readOnly}
-                onChange={(e) => updateBulkLocal({ ocCount: parseInt(e.target.value||'0',10) })}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const num = raw === '' ? 0 : parseInt(raw, 10);
+                  updateBulkLocal({ ocCount: Number.isNaN(num) ? 0 : num });
+                }}
                 inputProps={{ min: 0, max: 80 }} fullWidth />
               <Box sx={{ p: 2, bgcolor: total > 80 ? '#ffebee' : '#e8f5e9', borderRadius: 1 }}>
                 <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
