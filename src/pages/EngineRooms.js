@@ -338,7 +338,7 @@ export default function EngineRooms() {
   // ---------------------------------------------------------------
   useEffect(() => {
     fetchPumps();
-    const interval = setInterval(fetchPumps, 5000);
+    const interval = setInterval(fetchPumps, 10000);
     return () => clearInterval(interval);
   }, [fetchPumps]);
 

@@ -380,6 +380,7 @@ export default function ChemicalStorage() {
   const [cylinders, setCylinders] = useState([]);
   const [tanks, setTanks] = useState([]);
   const [bulk, setBulk] = useState({ fullCount: 0, emptyCount: 0, ocCount: 0 });
+  const [bulkLocal, setBulkLocal] = useState({ fullCount: 0, emptyCount: 0, ocCount: 0 });
   const [tankEtas, setTankEtas] = useState({});
   const tankDebounceTimer = React.useRef({});
   const [loading, setLoading] = useState(true);
@@ -404,7 +405,16 @@ export default function ChemicalStorage() {
         return Array.from(map.values());
       });
       setTanks(tRes.data || []);
-      setBulk(bRes.data || { fullCount: 0, emptyCount: 0, ocCount: 0 });
+      const incoming = bRes.data || { fullCount: 0, emptyCount: 0, ocCount: 0 };
+      setBulk(incoming);
+      // Only sync local editor if user hasn't typed unsaved changes
+      setBulkLocal(prev => {
+        const isDirty =
+          prev.fullCount !== bulk.fullCount ||
+          prev.emptyCount !== bulk.emptyCount ||
+          prev.ocCount !== bulk.ocCount;
+        return isDirty ? prev : incoming;
+      });
 
       const etaMap = {};
       (eRes.data?.items || []).forEach((e) => {
@@ -425,7 +435,7 @@ export default function ChemicalStorage() {
   useEffect(() => {
     setLoading(true);
     fetchAll();
-    const t = setInterval(fetchAll, 10000);
+    const t = setInterval(fetchAll, 20000);
     return () => clearInterval(t);
   }, [fetchAll]);
 
@@ -507,6 +517,27 @@ export default function ChemicalStorage() {
       await api.put(`/api/chemical/bulk/${currentPlant}`, merged);
     } catch (err) { console.warn(err); fetchAll(); }
   };
+
+  const updateBulkLocal = (patch) => {
+    setBulkLocal(prev => {
+      const merged = { ...prev, ...patch };
+      const total = (merged.fullCount||0) + (merged.emptyCount||0) + (merged.ocCount||0);
+      if (total > 80) {
+        alert('Bulk storage max is 80 cylinders');
+        return prev;
+      }
+      return merged;
+    });
+  };
+
+  const saveBulk = async () => {
+    await updateBulk(bulkLocal);
+  };
+
+  const bulkDirty =
+    bulkLocal.fullCount !== bulk.fullCount ||
+    bulkLocal.emptyCount !== bulk.emptyCount ||
+    bulkLocal.ocCount !== bulk.ocCount;
 
   if (loading) return <Box display="flex" justifyContent="center" p={4}><CircularProgress /></Box>;
 
@@ -620,13 +651,13 @@ export default function ChemicalStorage() {
   // BULK STORAGE
   // ============================================================
   const renderBulkStorage = () => {
-    const total = (bulk.fullCount||0) + (bulk.emptyCount||0) + (bulk.ocCount||0);
+    const total = (bulkLocal.fullCount||0) + (bulkLocal.emptyCount||0) + (bulkLocal.ocCount||0);
     const rack = [];
     for (let i = 0; i < 80; i++) {
       let status = null;
-      if (i < bulk.fullCount) status = 'FULL';
-      else if (i < bulk.fullCount + bulk.emptyCount) status = 'EMPTY';
-      else if (i < bulk.fullCount + bulk.emptyCount + bulk.ocCount) status = 'O/C';
+      if (i < bulkLocal.fullCount) status = 'FULL';
+      else if (i < bulkLocal.fullCount + bulkLocal.emptyCount) status = 'EMPTY';
+      else if (i < bulkLocal.fullCount + bulkLocal.emptyCount + bulkLocal.ocCount) status = 'O/C';
       rack.push(
         <Box key={i} sx={{ p: 0.25 }}>
           {status ? <MiniCylinder status={status} /> : (
@@ -647,17 +678,17 @@ export default function ChemicalStorage() {
               Inventory Input
             </Typography>
             <Stack spacing={2.5}>
-              <TextField size="small" type="number" label="Full (Ready)" value={bulk.fullCount}
+              <TextField size="small" type="number" label="Full (Ready)" value={bulkLocal.fullCount}
                 disabled={readOnly}
-                onChange={(e) => updateBulk({ fullCount: parseInt(e.target.value||'0',10) })}
+                onChange={(e) => updateBulkLocal({ fullCount: parseInt(e.target.value||'0',10) })}
                 inputProps={{ min: 0, max: 80 }} fullWidth />
-              <TextField size="small" type="number" label="Empty" value={bulk.emptyCount}
+              <TextField size="small" type="number" label="Empty" value={bulkLocal.emptyCount}
                 disabled={readOnly}
-                onChange={(e) => updateBulk({ emptyCount: parseInt(e.target.value||'0',10) })}
+                onChange={(e) => updateBulkLocal({ emptyCount: parseInt(e.target.value||'0',10) })}
                 inputProps={{ min: 0, max: 80 }} fullWidth />
-              <TextField size="small" type="number" label="Out of Commission (O/C)" value={bulk.ocCount}
+              <TextField size="small" type="number" label="Out of Commission (O/C)" value={bulkLocal.ocCount}
                 disabled={readOnly}
-                onChange={(e) => updateBulk({ ocCount: parseInt(e.target.value||'0',10) })}
+                onChange={(e) => updateBulkLocal({ ocCount: parseInt(e.target.value||'0',10) })}
                 inputProps={{ min: 0, max: 80 }} fullWidth />
               <Box sx={{ p: 2, bgcolor: total > 80 ? '#ffebee' : '#e8f5e9', borderRadius: 1 }}>
                 <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
@@ -667,6 +698,25 @@ export default function ChemicalStorage() {
                   Available slots: {80 - total}
                 </Typography>
               </Box>
+
+              {!readOnly && (
+                <>
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    disabled={!bulkDirty}
+                    onClick={saveBulk}
+                    sx={{ bgcolor: '#003366' }}
+                  >
+                    {bulkDirty ? 'Save Changes' : 'Saved'}
+                  </Button>
+                  {bulkDirty && (
+                    <Typography variant="caption" color="warning.main" sx={{ textAlign: 'center' }}>
+                      You have unsaved changes
+                    </Typography>
+                  )}
+                </>
+              )}
             </Stack>
           </CardContent>
         </Card>
