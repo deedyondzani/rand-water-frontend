@@ -40,25 +40,42 @@ const activeLimitFor = (plant) => {
   return Infinity;
 };
 
-const bankMetaFor = (plant, room) => {
+// Standard layout: 2 DB rooms x 10 slots per plant.
+// Room 1 → Drum Room 1 (Bank A: slots 1-5, Bank B: slots 6-10) with display 1-10
+// Room 2 → Drum Room 2 (Bank C: slots 1-5, Bank D: slots 6-10) with display 11-20
+const drumRoomFor = (plant, room) => {
   const p = (plant || '').toLowerCase();
   if (p === 'eikenhof') {
-    switch (room) {
-      case 1: return { group: 'Plant 1 (Top Plant)',    name: 'East Bank',  slots: [1,2,3,4,5,6,7,8,9,10] };
-      case 2: return { group: 'Plant 1 (Top Plant)',    name: 'West Bank',  slots: [11,12,13,14,15,16,17,18,19,20] };
-      case 3: return { group: 'Plant 2 (Bottom Plant)', name: 'North Bank', slots: [1,2,3,4,5,6,7,8,9,10] };
-      case 4: return { group: 'Plant 2 (Bottom Plant)', name: 'South Bank', slots: [11,12,13,14,15,16,17,18,19,20] };
-      default: return { group: 'Unknown', name: `Bank ${room}`, slots: [] };
-    }
+    // Eikenhof: 2 DB rooms, but banks named by plant
+    return room === 1 ? 'Plant 1 (Top Plant)' : 'Plant 2 (Bottom Plant)';
   }
-  switch (room) {
-    case 1: return { group: 'Drum Room 1', name: 'Bank A', slots: [1,2,3,4,5] };
-    case 2: return { group: 'Drum Room 1', name: 'Bank B', slots: [6,7,8,9,10] };
-    case 3: return { group: 'Drum Room 2', name: 'Bank C', slots: [11,12,13,14,15] };
-    case 4: return { group: 'Drum Room 2', name: 'Bank D', slots: [16,17,18,19,20] };
-    default: return { group: 'Unknown', name: `Bank ${room}`, slots: [] };
-  }
+  return room === 1 ? 'Drum Room 1' : 'Drum Room 2';
 };
+
+const bankFor = (plant, room, slot) => {
+  const p = (plant || '').toLowerCase();
+  const bankIndex = slot <= 5 ? 0 : 1;   // 0 = first bank, 1 = second bank
+
+  if (p === 'eikenhof') {
+    const names = room === 1 ? ['East Bank', 'West Bank'] : ['North Bank', 'South Bank'];
+    const offset = (room - 1) * 10;
+    return {
+      group: drumRoomFor(plant, room),
+      name: names[bankIndex],
+      displayNumber: offset + slot,
+    };
+  }
+  const letters = ['A', 'B', 'C', 'D'];
+  const letterIdx = (room - 1) * 2 + bankIndex;
+  const offset = (room - 1) * 10;
+  return {
+    group: drumRoomFor(plant, room),
+    name: `Bank ${letters[letterIdx]}`,
+    displayNumber: offset + slot,
+  };
+};
+
+const displayNumberFor = (plant, room, slot) => bankFor(plant, room, slot).displayNumber;
 
 // ============================================================
 // SVG — CHLORINE CYLINDER (realistic)
@@ -365,6 +382,7 @@ export default function ChemicalStorage() {
   const tankDebounceTimer = React.useRef({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const pendingCylRef = React.useRef(new Set());
 
   const fetchAll = useCallback(async () => {
     try {
@@ -374,7 +392,15 @@ export default function ChemicalStorage() {
         api.get(`/api/chemical/bulk/${currentPlant}`),
         api.get('/api/joe/tank-etas').catch(() => ({ data: { items: [] } })),
       ]);
-      setCylinders(cRes.data || []);
+      const pending = pendingCylRef.current;
+      const incoming = cRes.data || [];
+      setCylinders(prev => {
+        const map = new Map(prev.map(c => [c.id, c]));
+        incoming.forEach(c => {
+          if (!pending.has(c.id)) map.set(c.id, c);
+        });
+        return Array.from(map.values());
+      });
       setTanks(tRes.data || []);
       setBulk(bRes.data || { fullCount: 0, emptyCount: 0, ocCount: 0 });
 
@@ -409,10 +435,12 @@ export default function ChemicalStorage() {
         return;
       }
     }
+    pendingCylRef.current.add(cylId);
     setCylinders(prev => prev.map(c => c.id === cylId ? { ...c, status: newStatus } : c));
     try {
       await api.put(`/api/chemical/cl2/${cylId}/status`, { status: newStatus });
     } catch (err) { console.warn(err); fetchAll(); }
+    finally { pendingCylRef.current.delete(cylId); }
   };
 
   const setBankStatus = async (roomNumber, newStatus) => {
@@ -421,6 +449,35 @@ export default function ChemicalStorage() {
       await api.put(`/api/chemical/cl2/plant/${currentPlant}/room/${roomNumber}/status`,
         { status: newStatus });
     } catch (err) { console.warn(err); fetchAll(); }
+  };
+
+  const setBankSlotsStatus = async (roomNumber, bankIdx, newStatus) => {
+    // Determine which cylinders this bank covers
+    const targetIds = cylinders
+      .filter(c => c.roomNumber === roomNumber)
+      .filter(c => bankIdx === 0 ? c.slotNumber <= 5 : c.slotNumber > 5)
+      .map(c => c.id);
+
+    // Mark all as pending
+    targetIds.forEach(id => pendingCylRef.current.add(id));
+
+    // Optimistic update
+    setCylinders(prev => prev.map(c =>
+      targetIds.includes(c.id) ? { ...c, status: newStatus } : c
+    ));
+
+    try {
+      // Use the existing per-cylinder endpoint (loop) since backend only has room-level bulk
+      // Or if backend has a bank endpoint, swap to that.
+      await Promise.all(targetIds.map(id =>
+        api.put(`/api/chemical/cl2/${id}/status`, { status: newStatus })
+      ));
+    } catch (err) {
+      console.warn('Bank update failed', err);
+      fetchAll();
+    } finally {
+      targetIds.forEach(id => pendingCylRef.current.delete(id));
+    }
   };
 
   const resetBankToFull = (roomNumber) => setBankStatus(roomNumber, 'FULL');
@@ -469,7 +526,7 @@ export default function ChemicalStorage() {
           p: 2, '&:last-child': { pb: 2 },
           display: 'flex', flexDirection: 'column', alignItems: 'center',
         }}>
-          <CylinderSVG number={cyl.slotNumber} status={cyl.status} size={68} />
+          <CylinderSVG number={displayNumberFor(currentPlant, cyl.roomNumber, cyl.slotNumber)} status={cyl.status} size={68} />
 
           <Chip
             label={cyl.status}
@@ -505,46 +562,52 @@ export default function ChemicalStorage() {
   // ============================================================
   // BANK
   // ============================================================
-  const renderBank = (room) => {
-    const cyls = bankCyls(room);
+  const renderBank = (room, bankIdx) => {
+    // bankIdx 0 = slots 1-5, bankIdx 1 = slots 6-10
+    const allCyls = bankCyls(room);
+    const cyls = allCyls.filter(c => bankIdx === 0 ? c.slotNumber <= 5 : c.slotNumber > 5);
     if (cyls.length === 0) return null;
-    const meta = bankMetaFor(currentPlant, room);
+
+    const meta = bankFor(currentPlant, room, cyls[0].slotNumber);
+    const firstDisplay = displayNumberFor(currentPlant, room, cyls[0].slotNumber);
+    const lastDisplay  = displayNumberFor(currentPlant, room, cyls[cyls.length - 1].slotNumber);
+
     const bankStatuses = cyls.map(c => c.status);
     const allSame = bankStatuses.every(s => s === bankStatuses[0]);
     const bankValue = allSame ? bankStatuses[0] : 'MIXED';
 
     return (
-      <Card key={room} sx={{ mb: 2, borderLeft: `4px solid ${isEikenhof ? '#003366' : cylColor(bankValue)}` }}>
+      <Card key={`${room}-${bankIdx}`} sx={{ mb: 2, borderLeft: `4px solid ${cylColor(bankValue === 'MIXED' ? 'EMPTY' : bankValue)}` }}>
         <CardContent>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={2} flexWrap="wrap" gap={1}>
             <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#003366' }}>
               {meta.name} <Typography component="span" variant="caption" color="textSecondary">
-                (Cylinders {cyls[0]?.slotNumber}–{cyls[cyls.length-1]?.slotNumber})
+                (Cylinders {firstDisplay}–{lastDisplay})
               </Typography>
             </Typography>
-            {isEikenhof && (
-              <Stack direction="row" spacing={1} alignItems="center">
-                <FormControl size="small" sx={{ minWidth: 140 }}>
-                  <InputLabel>Bank Status</InputLabel>
-                  <Select value={bankValue} label="Bank Status"
-                    onChange={(e) => setBankStatus(room, e.target.value)}>
-                    <MenuItem value="FULL">FULL</MenuItem>
-                    <MenuItem value="IN_USE">IN USE</MenuItem>
-                    <MenuItem value="EMPTY">EMPTY</MenuItem>
-                    <MenuItem value="O/C">O/C</MenuItem>
-                    {bankValue === 'MIXED' && <MenuItem value="MIXED" disabled>MIXED</MenuItem>}
-                  </Select>
-                </FormControl>
-                <Button variant="contained" size="small" color="success"
-                  startIcon={<RestartAltIcon />}
-                  onClick={() => resetBankToFull(room)}>
-                  Reset to Full
-                </Button>
-              </Stack>
-            )}
+            <Stack direction="row" spacing={1} alignItems="center">
+              <FormControl size="small" sx={{ minWidth: 140 }}>
+                <InputLabel>Bank Status</InputLabel>
+                <Select value={bankValue} label="Bank Status"
+                  disabled={readOnly}
+                  onChange={(e) => setBankSlotsStatus(room, bankIdx, e.target.value)}>
+                  <MenuItem value="FULL">FULL</MenuItem>
+                  <MenuItem value="IN_USE">IN USE</MenuItem>
+                  <MenuItem value="EMPTY">EMPTY</MenuItem>
+                  <MenuItem value="O/C">O/C</MenuItem>
+                  {bankValue === 'MIXED' && <MenuItem value="MIXED" disabled>MIXED</MenuItem>}
+                </Select>
+              </FormControl>
+              <Button variant="contained" size="small" color="success"
+                startIcon={<RestartAltIcon />}
+                disabled={readOnly}
+                onClick={() => setBankSlotsStatus(room, bankIdx, 'FULL')}>
+                Reset to Full
+              </Button>
+            </Stack>
           </Box>
           <Grid container spacing={2}>
-            {cyls.map(c => renderCylinderCard(c, isEikenhof))}
+            {cyls.map(c => renderCylinderCard(c, false))}
           </Grid>
         </CardContent>
       </Card>
@@ -633,7 +696,7 @@ export default function ChemicalStorage() {
   // ============================================================
   const groups = {};
   cylinders.forEach(c => {
-    const meta = bankMetaFor(currentPlant, c.roomNumber);
+    const meta = bankFor(currentPlant, c.roomNumber, c.slotNumber);
     if (!groups[meta.group]) groups[meta.group] = [];
     if (!groups[meta.group].includes(c.roomNumber)) groups[meta.group].push(c.roomNumber);
   });
@@ -690,7 +753,12 @@ export default function ChemicalStorage() {
                   </Button>
                 )}
               </Box>
-              {rooms.sort().map(room => renderBank(room))}
+              {rooms.sort().map(room => (
+                <React.Fragment key={room}>
+                  {renderBank(room, 0)}
+                  {renderBank(room, 1)}
+                </React.Fragment>
+              ))}
             </Box>
           ))}
 
