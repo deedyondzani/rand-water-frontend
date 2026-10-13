@@ -69,10 +69,16 @@ const bankFor = (plant, room, slot) => {
       4: { group: 'Plant 2 (Bottom Plant)', name: 'South Bank' },
     };
     const meta = banks[room] || { group: 'Unknown', name: `Bank ${room}` };
+    // Second bank of each plant gets 11-20 offset:
+    //   Room 1 (East,  Top)    → 1-10
+    //   Room 2 (West,  Top)    → 11-20
+    //   Room 3 (North, Bottom) → 1-10
+    //   Room 4 (South, Bottom) → 11-20
+    const bankOffset = (room % 2 === 0) ? 10 : 0;
     return {
       group: meta.group,
       name: meta.name,
-      displayNumber: slot,
+      displayNumber: slot + bankOffset,
     };
   }
   const letters = ['A', 'B', 'C', 'D'];
