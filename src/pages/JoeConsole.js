@@ -10,6 +10,8 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import WarningIcon from '@mui/icons-material/Warning';
 import BackupIcon from '@mui/icons-material/Backup';
+import StorageIcon from '@mui/icons-material/Storage';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import HealingIcon from '@mui/icons-material/Healing';
 import SendIcon from '@mui/icons-material/Send';
 import RestoreIcon from '@mui/icons-material/Restore';
@@ -21,6 +23,14 @@ import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import useDocumentTitle from '../utils/useDocumentTitle';
 
+function fmtBytes(b) {
+  if (b == null || b === 0) return '0 B';
+  const u = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let n = b, i = 0;
+  while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
+  return n.toFixed(n < 10 ? 1 : 0) + ' ' + u[i];
+}
+
 export default function JoeConsole() {
   useDocumentTitle('Joe Console');
   const { user } = useAuth();
@@ -28,6 +38,7 @@ export default function JoeConsole() {
   const [health, setHealth] = useState(null);
   const [anomalies, setAnomalies] = useState({ count: 0, items: [] });
   const [backups, setBackups] = useState([]);
+  const [dbGrowth, setDbGrowth] = useState(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [status, setStatus] = useState(null);
@@ -46,14 +57,16 @@ export default function JoeConsole() {
   // ---------- Data fetch ----------
   const loadAll = useCallback(async () => {
     try {
-      const [hRes, aRes, bRes] = await Promise.all([
+      const [hRes, aRes, bRes, gRes] = await Promise.all([
         api.get('/api/joe/health'),
         api.get('/api/joe/anomalies'),
         api.get('/api/joe/backups'),
+        api.get('/api/joe/db-growth?days=30').catch(() => ({ data: null })),
       ]);
       setHealth(hRes.data);
       setAnomalies(aRes.data);
       setBackups(bRes.data || []);
+      setDbGrowth(gRes.data);
     } catch (err) {
       console.warn('Joe load failed', err);
       setStatus({ type: 'error', text: 'Failed to load Joe data' });
@@ -114,6 +127,20 @@ export default function JoeConsole() {
     } finally {
       setActionLoading(null);
       setTimeout(() => setStatus(null), 5000);
+    }
+  };
+
+  const doCaptureDbGrowth = async () => {
+    setActionLoading('dbgrowth');
+    try {
+      const res = await api.post('/api/joe/db-growth/capture');
+      setStatus({ type: 'success', text: `Snapshot #${res.data.id} captured (${res.data.auditLogRows} audit rows)` });
+      loadAll();
+    } catch (err) {
+      setStatus({ type: 'error', text: 'Capture failed: ' + (err.response?.data?.error || err.message) });
+    } finally {
+      setActionLoading(null);
+      setTimeout(() => setStatus(null), 4000);
     }
   };
 
@@ -342,6 +369,104 @@ export default function JoeConsole() {
                   Auto-backup runs every 5 min · Health sampled every 30s
                 </Typography>
               </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* ============ DB GROWTH ============ */}
+        <Grid item xs={12} md={5}>
+          <Card sx={{ borderTop: '5px solid #1976d2', height: '100%' }}>
+            <CardContent>
+              <Stack direction="row" alignItems="center" gap={1} mb={2}>
+                <StorageIcon sx={{ color: '#1976d2' }} />
+                <Typography variant="h6" sx={{ fontWeight: 'bold' }}>DB Growth</Typography>
+                <Box flex={1} />
+                <Tooltip title="Capture snapshot now">
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={actionLoading === 'dbgrowth' ? <CircularProgress size={14} /> : <TrendingUpIcon />}
+                    onClick={doCaptureDbGrowth}
+                    disabled={actionLoading !== null}
+                  >
+                    Capture
+                  </Button>
+                </Tooltip>
+              </Stack>
+
+              {!dbGrowth || !dbGrowth.current ? (
+                <Typography variant="body2" color="textSecondary">
+                  No snapshots yet — click Capture to take the first one.
+                </Typography>
+              ) : (
+                <>
+                  <Grid container spacing={1.5}>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="textSecondary">Audit rows</Typography>
+                      <Typography variant="h6" fontWeight="bold">
+                        {(dbGrowth.current.auditLogRows ?? 0).toLocaleString()}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="textSecondary">Total DB</Typography>
+                      <Typography variant="h6" fontWeight="bold">
+                        {fmtBytes(dbGrowth.current.totalDbBytes)}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="textSecondary">Users</Typography>
+                      <Typography variant="body1" fontWeight="bold">
+                        {dbGrowth.current.userCount ?? 0}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="textSecondary">Backups</Typography>
+                      <Typography variant="body1" fontWeight="bold">
+                        {dbGrowth.current.backupCount ?? 0}
+                      </Typography>
+                    </Grid>
+                  </Grid>
+
+                  <Divider sx={{ my: 2 }} />
+
+                  {dbGrowth.delta && (dbGrowth.delta.daysCovered > 0) && (
+                    <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mb: 1 }}>
+                      Over last {dbGrowth.delta.daysCovered} day(s):
+                      {' +'}{(dbGrowth.delta.auditLogRowsDelta ?? 0).toLocaleString()} rows,
+                      {' +'}{fmtBytes(dbGrowth.delta.totalDbBytesDelta ?? 0)}
+                    </Typography>
+                  )}
+
+                  {dbGrowth.history && dbGrowth.history.length > 1 && (
+                    <Box mt={1}>
+                      <Typography variant="caption" color="textSecondary">Audit rows history</Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'flex-end', height: 40, gap: 0.3, mt: 0.5 }}>
+                        {[...dbGrowth.history].reverse().map((s, i) => {
+                          const max = Math.max(...dbGrowth.history.map(x => x.auditLogRows || 0), 1);
+                          const pct = ((s.auditLogRows || 0) / max) * 100;
+                          return (
+                            <Tooltip key={i} title={`${s.auditLogRows} rows · ${s.capturedAt ? new Date(s.capturedAt).toLocaleString() : ''}`}>
+                              <Box sx={{
+                                flex: 1,
+                                height: `${Math.max(5, pct)}%`,
+                                bgcolor: '#1976d2',
+                                borderRadius: 0.5,
+                                opacity: 0.75,
+                              }} />
+                            </Tooltip>
+                          );
+                        })}
+                      </Box>
+                    </Box>
+                  )}
+
+                  <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mt: 1.5 }}>
+                    Last snapshot: {dbGrowth.current.capturedAt
+                      ? new Date(dbGrowth.current.capturedAt).toLocaleString()
+                      : '—'}
+                  </Typography>
+                </>
+              )}
             </CardContent>
           </Card>
         </Grid>
