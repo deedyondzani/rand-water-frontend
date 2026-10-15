@@ -7,6 +7,7 @@ import {
 import LockResetIcon from '@mui/icons-material/LockReset';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
+import PasswordField, { validatePassword } from '../components/PasswordField';
 
 export default function ChangePassword() {
   const { user, logout } = useAuth();
@@ -22,8 +23,9 @@ export default function ChangePassword() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-    if (newPassword.length < 4) {
-      setError('Password must be at least 4 characters');
+    const pwError = validatePassword(newPassword);
+    if (pwError) {
+      setError(pwError);
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -95,17 +97,21 @@ export default function ChangePassword() {
 
           <form onSubmit={handleSubmit}>
             <Stack spacing={2.5}>
-              <TextField
-                label="New Password" type="password" fullWidth
+              <PasswordField
+                label="New Password"
                 value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                autoFocus disabled={loading || success}
+                onChange={setNewPassword}
+                autoFocus
+                disabled={loading || success}
               />
               <TextField
                 label="Confirm New Password" type="password" fullWidth
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 disabled={loading || success}
+                error={confirmPassword.length > 0 && newPassword !== confirmPassword}
+                helperText={confirmPassword.length > 0 && newPassword !== confirmPassword
+                  ? 'Passwords do not match' : ''}
               />
               <Button
                 type="submit" variant="contained" fullWidth size="large"

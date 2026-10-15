@@ -11,6 +11,7 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LockResetIcon from '@mui/icons-material/LockReset';
+import PasswordField, { validatePassword } from '../components/PasswordField';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -294,6 +295,15 @@ function UserDialog({ open, onClose, editingUser, roles }) {
     if (!isEdit && !username.trim()) { alert('Username is required'); return; }
     if (!isEdit && !password.trim()) { alert('Password is required for new users'); return; }
 
+    // Password policy check — only when a password was entered
+    if (password.trim()) {
+      const pwError = validatePassword(password.trim());
+      if (pwError) {
+        alert(pwError);
+        return;
+      }
+    }
+
     const payload = {
       username: username.trim(),
       fullName: fullName.trim(),
@@ -339,12 +349,13 @@ function UserDialog({ open, onClose, editingUser, roles }) {
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
           />
-          <TextField
+          <PasswordField
             label={isEdit ? 'New Password (leave blank to keep current)' : 'Password'}
-            type="password"
-            fullWidth
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={setPassword}
+            showChecklist={!isEdit || password.length > 0}
+            required={!isEdit}
+            autoComplete={isEdit ? 'new-password' : 'new-password'}
           />
           <FormControl fullWidth>
             <InputLabel>Role</InputLabel>
