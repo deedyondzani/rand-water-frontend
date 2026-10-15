@@ -26,7 +26,7 @@ const CELL_W = 68;
 export default function QualityData() {
   const { plantId } = useParams();
   useDocumentTitle(`${plantId} Quality Data`);
-  const { user, isReadOnly } = useAuth();
+  const { isReadOnly } = useAuth();
   const readOnly = isReadOnly();
 
   const lines = getPlantLines(plantId);
@@ -115,7 +115,7 @@ export default function QualityData() {
     setTimeout(() => setStatus(null), 3000);
   }, [plantId, date, shiftType, shift, readings,
       controllerName, controllerNumber, supervisorName, supervisorNumber,
-      comments, user]);
+      comments]);
 
   const handleReload = () => {
     const saved = loadQualityData(plantId, date, shiftType, shift);

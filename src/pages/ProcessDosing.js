@@ -25,7 +25,7 @@ const BIG_W = 130;
 export default function ProcessDosing() {
   const { plantId } = useParams();
   useDocumentTitle(`${plantId} Process Dosing`);
-  const { user, isReadOnly } = useAuth();
+  const { isReadOnly } = useAuth();
   const readOnly = isReadOnly();
 
   const lines = getPlantLines(plantId);
@@ -193,7 +193,7 @@ export default function ProcessDosing() {
 
     setStatus({ type: 'success', text: 'Session saved' });
     setTimeout(() => setStatus(null), 3000);
-  }, [plantId, date, shiftType, shift, rows, user]);
+  }, [plantId, date, shiftType, shift, rows]);
 
   const handleReload = () => {
     const saved = loadProcessDosing(plantId, date, shiftType, shift);
