@@ -153,16 +153,16 @@ export function exportQualityPDF({
 
     const dosingBody = processDosingIncomingLines.map((line) => [
       line,
-      formatPdfVal(pRows[`${line}_magflow`] || ''),
-      formatPdfVal(pRows[`${line}_freeCl2`] || ''),
-      formatPdfVal(pRows[`${line}_diffFree`] || ''),
+      formatPdfVal(formatPdfVal(pRows[`${line}_magflow`] || '')),
+      formatPdfVal(formatPdfVal(pRows[`${line}_freeCl2`] || '')),
+      formatPdfVal(formatPdfVal(pRows[`${line}_diffFree`] || '')),
       pRows[`${line}_time`]    || '',
       pRows[`${line}_cl2Req`]  || '',
       pRows[`${line}_cl2Act`]  || '',
-      formatPdfVal(pRows[`${line}_diffCl2`] || ''),
+      formatPdfVal(formatPdfVal(pRows[`${line}_diffCl2`] || '')),
       pRows[`${line}_nh3Req`]  || '',
       pRows[`${line}_nh3Act`]  || '',
-      formatPdfVal(pRows[`${line}_diffNh3`] || ''),
+      formatPdfVal(formatPdfVal(pRows[`${line}_diffNh3`] || '')),
     ]);
 
     autoTable(doc, {
@@ -273,17 +273,17 @@ export function exportProcessDosingPDF({
 
   const body = incomingLines.map((line) => [
     line,
-    formatPdfVal(rows[`${line}_magflow`] || ''),
-    formatPdfVal(rows[`${line}_freeCl2`] || ''),
-    formatPdfVal(rows[`${line}_diffFree`] || ''),
-    formatPdfVal(rows[`${line}_time`] || ''),
-    formatPdfVal(rows[`${line}_cl2Req`] || ''),
-    formatPdfVal(rows[`${line}_cl2Act`] || ''),
-    formatPdfVal(rows[`${line}_diffCl2`] || ''),
-    formatPdfVal(rows[`${line}_nh3Req`] || ''),
-    formatPdfVal(rows[`${line}_nh3Act`] || ''),
-    formatPdfVal(rows[`${line}_diffNh3`] || ''),
-    formatPdfVal(rows[`${line}_comments`] || ''),
+    formatPdfVal(formatPdfVal(rows[`${line}_magflow`] || '')),
+    formatPdfVal(formatPdfVal(rows[`${line}_freeCl2`] || '')),
+    formatPdfVal(formatPdfVal(rows[`${line}_diffFree`] || '')),
+    formatPdfVal(formatPdfVal(rows[`${line}_time`] || '')),
+    formatPdfVal(formatPdfVal(rows[`${line}_cl2Req`] || '')),
+    formatPdfVal(formatPdfVal(rows[`${line}_cl2Act`] || '')),
+    formatPdfVal(formatPdfVal(rows[`${line}_diffCl2`] || '')),
+    formatPdfVal(formatPdfVal(rows[`${line}_nh3Req`] || '')),
+    formatPdfVal(formatPdfVal(rows[`${line}_nh3Act`] || '')),
+    formatPdfVal(formatPdfVal(rows[`${line}_diffNh3`] || '')),
+    formatPdfVal(formatPdfVal(rows[`${line}_comments`] || '')),
   ]);
 
   autoTable(doc, {
