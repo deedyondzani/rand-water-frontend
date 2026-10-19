@@ -224,6 +224,12 @@ export default function QualityData() {
                   [`${line}_${time}_free`]: e.target.value,
                 }))}
                 onKeyDown={(e) => handleCellKeyDown(e, `${line}_${time}_free`)}
+                onBlur={(e) => {
+                  let v = e.target.value.trim();
+                  if (v.startsWith('.')) v = '0' + v;
+                  else if (v.startsWith('-.')) v = '-0' + v.slice(1);
+                  setReadings((prev) => ({ ...prev, [`${line}_${time}_free`]: v }));
+                }}
                 disabled={readOnly}
                 style={{
                   width: CELL_W, textAlign: 'center', padding: '5px 2px',
@@ -243,6 +249,12 @@ export default function QualityData() {
                   [`${line}_${time}_mono`]: e.target.value,
                 }))}
                 onKeyDown={(e) => handleCellKeyDown(e, `${line}_${time}_mono`)}
+                onBlur={(e) => {
+                  let v = e.target.value.trim();
+                  if (v.startsWith('.')) v = '0' + v;
+                  else if (v.startsWith('-.')) v = '-0' + v.slice(1);
+                  setReadings((prev) => ({ ...prev, [`${line}_${time}_mono`]: v }));
+                }}
                 disabled={readOnly || monoDisabled}
                 style={{
                   width: CELL_W, textAlign: 'center', padding: '5px 2px',

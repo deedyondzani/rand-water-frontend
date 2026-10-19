@@ -9,6 +9,16 @@ const OUT_BG = [220, 240, 255];
 const ZEBRA  = [248, 249, 250];
 const BORDER = [200, 200, 200];
 
+const formatPdfVal = (val) => {
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (trimmed.startsWith('.')) return '0' + trimmed;
+    if (trimmed.startsWith('-.')) return '-0' + trimmed.slice(1);
+    return trimmed;
+  }
+  return val;
+};
+
 /**
  * Export the Quality Data logsheet as a PDF matching the desktop
  * Rand Water form ZK OPS 02005 F (Revision 04, May 2025).
@@ -87,8 +97,8 @@ export function exportQualityPDF({
   incomingLines.forEach((line, idx) => {
     const row = [line];
     timeSlots.forEach((time) => {
-      row.push(readings[`${line}_${time}_free`] || '');
-      row.push(readings[`${line}_${time}_mono`] || '');
+      row.push(formatPdfVal(readings[`${line}_${time}_free`]) || '');
+      row.push(formatPdfVal(readings[`${line}_${time}_mono`]) || '');
     });
     body.push(row);
   });
@@ -106,8 +116,8 @@ export function exportQualityPDF({
   outgoingLines.forEach((line) => {
     const row = [line];
     timeSlots.forEach((time) => {
-      row.push(readings[`${line}_${time}_free`] || '');
-      row.push(readings[`${line}_${time}_mono`] || '');
+      row.push(formatPdfVal(readings[`${line}_${time}_free`]) || '');
+      row.push(formatPdfVal(readings[`${line}_${time}_mono`]) || '');
     });
     body.push(row);
   });
@@ -143,16 +153,16 @@ export function exportQualityPDF({
 
     const dosingBody = processDosingIncomingLines.map((line) => [
       line,
-      pRows[`${line}_magflow`] || '',
-      pRows[`${line}_freeCl2`] || '',
-      pRows[`${line}_diffFree`] || '',
+      formatPdfVal(pRows[`${line}_magflow`] || ''),
+      formatPdfVal(pRows[`${line}_freeCl2`] || ''),
+      formatPdfVal(pRows[`${line}_diffFree`] || ''),
       pRows[`${line}_time`]    || '',
       pRows[`${line}_cl2Req`]  || '',
       pRows[`${line}_cl2Act`]  || '',
-      pRows[`${line}_diffCl2`] || '',
+      formatPdfVal(pRows[`${line}_diffCl2`] || ''),
       pRows[`${line}_nh3Req`]  || '',
       pRows[`${line}_nh3Act`]  || '',
-      pRows[`${line}_diffNh3`] || '',
+      formatPdfVal(pRows[`${line}_diffNh3`] || ''),
     ]);
 
     autoTable(doc, {
@@ -263,17 +273,17 @@ export function exportProcessDosingPDF({
 
   const body = incomingLines.map((line) => [
     line,
-    rows[`${line}_magflow`] || '',
-    rows[`${line}_freeCl2`] || '',
-    rows[`${line}_diffFree`] || '',
-    rows[`${line}_time`] || '',
-    rows[`${line}_cl2Req`] || '',
-    rows[`${line}_cl2Act`] || '',
-    rows[`${line}_diffCl2`] || '',
-    rows[`${line}_nh3Req`] || '',
-    rows[`${line}_nh3Act`] || '',
-    rows[`${line}_diffNh3`] || '',
-    rows[`${line}_comments`] || '',
+    formatPdfVal(rows[`${line}_magflow`] || ''),
+    formatPdfVal(rows[`${line}_freeCl2`] || ''),
+    formatPdfVal(rows[`${line}_diffFree`] || ''),
+    formatPdfVal(rows[`${line}_time`] || ''),
+    formatPdfVal(rows[`${line}_cl2Req`] || ''),
+    formatPdfVal(rows[`${line}_cl2Act`] || ''),
+    formatPdfVal(rows[`${line}_diffCl2`] || ''),
+    formatPdfVal(rows[`${line}_nh3Req`] || ''),
+    formatPdfVal(rows[`${line}_nh3Act`] || ''),
+    formatPdfVal(rows[`${line}_diffNh3`] || ''),
+    formatPdfVal(rows[`${line}_comments`] || ''),
   ]);
 
   autoTable(doc, {

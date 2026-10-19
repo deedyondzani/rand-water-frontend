@@ -235,6 +235,12 @@ export default function ProcessDosing() {
         value={getField(key)}
         onChange={(e) => setField(key, e.target.value)}
         onKeyDown={(e) => handleKeyDown(e, key)}
+        onBlur={(e) => {
+          let v = e.target.value.trim();
+          if (v.startsWith('.')) v = '0' + v;
+          else if (v.startsWith('-.')) v = '-0' + v.slice(1);
+          setField(key, v);
+        }}
         disabled={readOnly || isAuto}
         style={{
           width, textAlign: 'center', padding: '5px 2px',
