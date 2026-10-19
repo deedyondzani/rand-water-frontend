@@ -46,6 +46,21 @@ export default function QualityData() {
 
   const timeSlots = getTimeSlots(shiftType, shift);
 
+  // Define all grid cells (including disabled ones for math)
+  const allKeys = [];
+  lines.incoming.forEach((line) => {
+    timeSlots.forEach((time) => {
+      allKeys.push(`${line}_${time}_free`);
+      allKeys.push(`${line}_${time}_mono`);
+    });
+  });
+  lines.outgoing.forEach((line) => {
+    timeSlots.forEach((time) => {
+      allKeys.push(`${line}_${time}_free`);
+      allKeys.push(`${line}_${time}_mono`);
+    });
+  });
+
   // Editable field keys in reading order (readonly fields excluded)
   const editableKeys = [];
   lines.incoming.forEach((line) => {
@@ -137,46 +152,35 @@ export default function QualityData() {
     if (!NAV.includes(e.key)) return;
     e.preventDefault();
 
-    let target;
+    const colsPerRow = timeSlots.length * 2;
+    const idx = allKeys.indexOf(key);
+    if (idx < 0) return;
 
-    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-      const idx = editableKeys.indexOf(key);
-      if (idx < 0) return;
-      const dir = (e.key === 'ArrowRight') ? 1 : -1;
-      for (let i = idx + dir; i >= 0 && i < editableKeys.length; i += dir) {
-        target = inputRefs.current[editableKeys[i]];
-        if (target) break;
-      }
-    } else {
-      // Vertical movement
-      const idx = allKeys.indexOf(key);
-      if (idx < 0) return;
-      
-      const colsPerRow = timeSlots.length * 2;
-      const currentRow = Math.floor(idx / colsPerRow);
-      const currentCol = idx % colsPerRow;
-      const nextRow = currentRow + (e.key === 'ArrowDown' || e.key === 'Enter' ? 1 : -1);
-      
-      if (nextRow < 0 || nextRow >= Math.ceil(allKeys.length / colsPerRow)) return;
+    let targetIdx = -1;
 
-      const startIdx = nextRow * colsPerRow + currentCol;
-      
-      // Look for the nearest editable cell in the target row (same column, or shift left/right)
-      for (let offset = 0; offset < colsPerRow; offset++) {
-        if (currentCol + offset < colsPerRow) {
-          target = inputRefs.current[allKeys[startIdx + offset]];
-          if (target && !target.disabled) break;
-        }
-        if (currentCol - offset >= 0) {
-          target = inputRefs.current[allKeys[startIdx - offset]];
-          if (target && !target.disabled) break;
-        }
-      }
+    if (e.key === 'ArrowRight' || e.key === 'Enter') {
+      targetIdx = idx + 1;
+    } else if (e.key === 'ArrowLeft') {
+      targetIdx = idx - 1;
+    } else if (e.key === 'ArrowDown') {
+      targetIdx = idx + colsPerRow;
+    } else if (e.key === 'ArrowUp') {
+      targetIdx = idx - colsPerRow;
     }
 
-    if (target) {
-      target.focus();
-      if (target.select) target.select();
+    if (targetIdx >= 0 && targetIdx < allKeys.length) {
+      const dir = (targetIdx > idx) ? 1 : -1;
+      
+      // Look for the nearest enabled cell in that direction
+      while (targetIdx >= 0 && targetIdx < allKeys.length) {
+        const target = inputRefs.current[allKeys[targetIdx]];
+        if (target && !target.disabled) {
+          target.focus();
+          if (target.select) target.select();
+          return;
+        }
+        targetIdx += dir;
+      }
     }
   };
 
