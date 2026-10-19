@@ -44,6 +44,23 @@ export default function QualityData() {
 
   const inputRefs = useRef({});
 
+  const getBase64Image = (url) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+  };
+
   const timeSlots = getTimeSlots(shiftType, shift);
 
   // Define all grid cells (including disabled ones for math)
@@ -267,8 +284,9 @@ export default function QualityData() {
     setTimeout(() => setStatus(null), 2500);
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     const dosing = loadProcessDosing(plantId, date, shiftType, shift);
+    const logoBase64 = await getBase64Image('/logo/randwater_logo.png');
 
     exportQualityPDF({
       plantId,
@@ -286,6 +304,7 @@ export default function QualityData() {
       comments,
       processDosingRows: dosing?.rows || null,
       processDosingIncomingLines: lines.incoming,
+      logoBase64,
     });
     setStatus({ type: 'success', text: 'PDF exported (Quality + Process Dosing)' });
     setTimeout(() => setStatus(null), 3000);

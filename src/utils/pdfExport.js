@@ -29,10 +29,18 @@ export function exportQualityPDF({
   comments,
   processDosingRows,
   processDosingIncomingLines,
+  logoBase64,
 }) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
   let y = 12;
+
+  // ---- Logo (Top Right) ----
+  if (logoBase64) {
+    try {
+      doc.addImage(logoBase64, 'PNG', pageW - 40, 12, 30, 15); // 30mm wide, 15mm tall
+    } catch (e) { console.warn('Logo failed to render', e); }
+  }
 
   // ---- Title ----
   doc.setFont('helvetica', 'bold');
@@ -53,7 +61,7 @@ export function exportQualityPDF({
 
   doc.setFontSize(8);
   doc.setTextColor(120, 120, 120);
-  doc.text('Form No: ZK OPS 02005 F   |   Revision No: 04   |   Effective date: May 2025', pageW / 2, y, { align: 'center' });
+  doc.text('Form No: ZK OPS 02005 F   |   Revision No: 05   |   Effective date: Jan 2027', pageW / 2, y, { align: 'center' });
   y += 8;
 
   // ---- Quality table ----
@@ -204,11 +212,15 @@ export function exportQualityPDF({
   // ---- Footer ----
   doc.setFontSize(7);
   doc.setTextColor(120, 120, 120);
-  doc.text('Version 6.0 | Bolosh Tech', pageW - 10, y, { align: 'right' });
+  doc.text('VictoryLab', pageW - 10, y, { align: 'right' });
 
   // ---- Filename ----
-  const cleanDate = date.replace(/[/:\s]/g, '-');
-  const filename = `${plantId}_Quality_${cleanDate}_${shiftType.replace('-', '')}_${shift}.pdf`;
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  const ss = String(now.getSeconds()).padStart(2, '0');
+  const cleanDate = date.replace(/[/]/g, '-');
+  const filename = `${plantId}_Quality_${cleanDate}_${shift} Shift_${shiftType.replace('-', 'Hours')}_Timestamp(${hh}H${mm}_${ss}s).pdf`;
   doc.save(filename);
 }
 
@@ -284,7 +296,7 @@ export function exportProcessDosingPDF({
   doc.setTextColor(120, 120, 120);
   doc.text('Status: +X Above Chart  |  -X Below Chart  |  0.00 On Target', 15, y);
   y += 5;
-  doc.text('Version 6.0 | Bolosh Tech', pageW - 10, y, { align: 'right' });
+  doc.text('VictoryLab', pageW - 10, y, { align: 'right' });
 
   const cleanDate = date.replace(/[/:\s]/g, '-');
   const filename = `${plantId}_ProcessDosing_${cleanDate}_${shiftType.replace('-', '')}_${shift}.pdf`;
