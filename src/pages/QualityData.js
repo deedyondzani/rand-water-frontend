@@ -136,16 +136,47 @@ export default function QualityData() {
     const NAV = ['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown', 'Enter'];
     if (!NAV.includes(e.key)) return;
     e.preventDefault();
-    const idx = editableKeys.indexOf(key);
-    if (idx < 0) return;
-    const dir = (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'Enter') ? 1 : -1;
-    for (let i = idx + dir; i >= 0 && i < editableKeys.length; i += dir) {
-      const target = inputRefs.current[editableKeys[i]];
-      if (target && !target.disabled && target.focus) {
-        target.focus();
-        if (target.select) target.select();
-        return;
+
+    let target;
+
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      const idx = editableKeys.indexOf(key);
+      if (idx < 0) return;
+      const dir = (e.key === 'ArrowRight') ? 1 : -1;
+      for (let i = idx + dir; i >= 0 && i < editableKeys.length; i += dir) {
+        target = inputRefs.current[editableKeys[i]];
+        if (target) break;
       }
+    } else {
+      // Vertical movement
+      const idx = allKeys.indexOf(key);
+      if (idx < 0) return;
+      
+      const colsPerRow = timeSlots.length * 2;
+      const currentRow = Math.floor(idx / colsPerRow);
+      const currentCol = idx % colsPerRow;
+      const nextRow = currentRow + (e.key === 'ArrowDown' || e.key === 'Enter' ? 1 : -1);
+      
+      if (nextRow < 0 || nextRow >= Math.ceil(allKeys.length / colsPerRow)) return;
+
+      const startIdx = nextRow * colsPerRow + currentCol;
+      
+      // Look for the nearest editable cell in the target row (same column, or shift left/right)
+      for (let offset = 0; offset < colsPerRow; offset++) {
+        if (currentCol + offset < colsPerRow) {
+          target = inputRefs.current[allKeys[startIdx + offset]];
+          if (target && !target.disabled) break;
+        }
+        if (currentCol - offset >= 0) {
+          target = inputRefs.current[allKeys[startIdx - offset]];
+          if (target && !target.disabled) break;
+        }
+      }
+    }
+
+    if (target) {
+      target.focus();
+      if (target.select) target.select();
     }
   };
 

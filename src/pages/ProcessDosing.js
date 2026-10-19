@@ -96,15 +96,22 @@ export default function ProcessDosing() {
     const NAV = ['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown', 'Enter'];
     if (!NAV.includes(e.key)) return;
     e.preventDefault();
+
     const idx = editableKeys.indexOf(key);
     if (idx < 0) return;
-    const dir = (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'Enter') ? 1 : -1;
-    for (let i = idx + dir; i >= 0 && i < editableKeys.length; i += dir) {
-      const target = inputRefs.current[editableKeys[i]];
-      if (target && !target.disabled && target.focus) {
+
+    let targetIdx = -1;
+
+    if (e.key === 'ArrowRight') targetIdx = idx + 1;
+    else if (e.key === 'ArrowLeft') targetIdx = idx - 1;
+    else if (e.key === 'ArrowDown' || e.key === 'Enter') targetIdx = idx + 4; // 4 editable fields per row
+    else if (e.key === 'ArrowUp') targetIdx = idx - 4;
+
+    if (targetIdx >= 0 && targetIdx < editableKeys.length) {
+      const target = inputRefs.current[editableKeys[targetIdx]];
+      if (target && !target.disabled) {
         target.focus();
         if (target.select) target.select();
-        return;
       }
     }
   };

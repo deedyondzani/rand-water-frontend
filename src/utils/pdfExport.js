@@ -119,7 +119,8 @@ export function exportQualityPDF({
   y = doc.lastAutoTable.finalY + 8;
 
   // ---- Process Data section (same page as Quality grid) ----
-  if (processDosingRows && processDosingIncomingLines && processDosingIncomingLines.length > 0) {
+  if (processDosingIncomingLines && processDosingIncomingLines.length > 0) {
+    const pRows = processDosingRows || {};
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
     doc.setTextColor(0, 0, 0);
@@ -134,16 +135,16 @@ export function exportQualityPDF({
 
     const dosingBody = processDosingIncomingLines.map((line) => [
       line,
-      processDosingRows[`${line}_magflow`] || '',
-      processDosingRows[`${line}_freeCl2`] || '',
-      processDosingRows[`${line}_diffFree`] || '',
-      processDosingRows[`${line}_time`]    || '',
-      processDosingRows[`${line}_cl2Req`]  || '',
-      processDosingRows[`${line}_cl2Act`]  || '',
-      processDosingRows[`${line}_diffCl2`] || '',
-      processDosingRows[`${line}_nh3Req`]  || '',
-      processDosingRows[`${line}_nh3Act`]  || '',
-      processDosingRows[`${line}_diffNh3`] || '',
+      pRows[`${line}_magflow`] || '',
+      pRows[`${line}_freeCl2`] || '',
+      pRows[`${line}_diffFree`] || '',
+      pRows[`${line}_time`]    || '',
+      pRows[`${line}_cl2Req`]  || '',
+      pRows[`${line}_cl2Act`]  || '',
+      pRows[`${line}_diffCl2`] || '',
+      pRows[`${line}_nh3Req`]  || '',
+      pRows[`${line}_nh3Act`]  || '',
+      pRows[`${line}_diffNh3`] || '',
     ]);
 
     autoTable(doc, {
