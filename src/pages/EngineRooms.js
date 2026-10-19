@@ -112,8 +112,8 @@ const mockPumps = {
     { id: 8,  number: 8,  engineRoom: 'ER2', status: 'Running', flowRate: 180, runningTime: '4h 30m 22s' },
     { id: 9,  number: 9,  engineRoom: 'ER2', status: 'Running', flowRate: 180, runningTime: '6h 0m 15s' },
     { id: 10, number: 10, engineRoom: 'ER2', status: 'Running', flowRate: 180, runningTime: '2h 45m 50s' },
-    { id: 11, number: 11, engineRoom: 'ER2', status: 'Standby', flowRate: 180, runningTime: '0h 0m 0s' },
-    { id: 12, number: 12, engineRoom: 'ER2', status: 'Standby', flowRate: 180, runningTime: '0h 0m 0s' },
+    { id: 11, number: 11, engineRoom: 'ER2', status: 'Standby', flowRate: 180 },
+    { id: 12, number: 12, engineRoom: 'ER2', status: 'Standby', flowRate: 180 },
     { id: 13, number: 13, engineRoom: 'ER2', status: 'Running', flowRate: 25,  runningTime: '1h 20m 10s' },
     { id: 14, number: 15, engineRoom: 'ER2', status: 'Running', flowRate: 25,  runningTime: '3h 0m 5s' },
     { id: 15, number: 16, engineRoom: 'ER2', status: 'Running', flowRate: 50,  runningTime: '7h 15m 33s' },
@@ -122,11 +122,11 @@ const mockPumps = {
     // ER3: 19-26 @ 200 (IDs 18-25)
     { id: 18, number: 19, engineRoom: 'ER3', status: 'Running', flowRate: 200, runningTime: '2h 10m 12s' },
     { id: 19, number: 20, engineRoom: 'ER3', status: 'Running', flowRate: 200, runningTime: '5h 40m 9s' },
-    { id: 20, number: 21, engineRoom: 'ER3', status: 'Standby', flowRate: 200, runningTime: '0h 0m 0s' },
+    { id: 20, number: 21, engineRoom: 'ER3', status: 'Standby', flowRate: 200 },
     { id: 21, number: 22, engineRoom: 'ER3', status: 'Running', flowRate: 200, runningTime: '1h 30m 44s' },
-    { id: 22, number: 23, engineRoom: 'ER3', status: 'Standby', flowRate: 200, runningTime: '0h 0m 0s' },
+    { id: 22, number: 23, engineRoom: 'ER3', status: 'Standby', flowRate: 200 },
     { id: 23, number: 24, engineRoom: 'ER3', status: 'Running', flowRate: 200, runningTime: '4h 15m 18s' },
-    { id: 24, number: 25, engineRoom: 'ER3', status: 'Standby', flowRate: 200, runningTime: '0h 0m 0s' },
+    { id: 24, number: 25, engineRoom: 'ER3', status: 'Standby', flowRate: 200 },
     { id: 25, number: 26, engineRoom: 'ER3', status: 'Running', flowRate: 200, runningTime: '8h 0m 1s' },
   ],
   Eikenhof: [
@@ -156,16 +156,16 @@ const mockPumps = {
     { id: 43, number: 1,  engineRoom: 'ER1', status: 'Running', flowRate: 100, runningTime: '6h 0m 30s' },
     { id: 44, number: 2,  engineRoom: 'ER1', status: 'Running', flowRate: 100, runningTime: '2h 30m 15s' },
     { id: 45, number: 3,  engineRoom: 'ER1', status: 'Running', flowRate: 100, runningTime: '5h 20m 5s' },
-    { id: 46, number: 4,  engineRoom: 'ER1', status: 'Standby', flowRate: 100, runningTime: '0h 0m 0s' },
+    { id: 46, number: 4,  engineRoom: 'ER1', status: 'Standby', flowRate: 100 },
     // ER3: 14,15,16,18,19,20,21,22 @ 100 (IDs 47-54)
     { id: 47, number: 14, engineRoom: 'ER3', status: 'Running', flowRate: 100, runningTime: '3h 10m 20s' },
-    { id: 48, number: 15, engineRoom: 'ER3', status: 'Standby', flowRate: 100, runningTime: '0h 0m 0s' },
+    { id: 48, number: 15, engineRoom: 'ER3', status: 'Standby', flowRate: 100 },
     { id: 49, number: 16, engineRoom: 'ER3', status: 'Running', flowRate: 100, runningTime: '1h 40m 0s' },
-    { id: 50, number: 18, engineRoom: 'ER3', status: 'Standby', flowRate: 100, runningTime: '0h 0m 0s' },
+    { id: 50, number: 18, engineRoom: 'ER3', status: 'Standby', flowRate: 100 },
     { id: 51, number: 19, engineRoom: 'ER3', status: 'Running', flowRate: 100, runningTime: '4h 50m 45s' },
-    { id: 52, number: 20, engineRoom: 'ER3', status: 'Standby', flowRate: 100, runningTime: '0h 0m 0s' },
+    { id: 52, number: 20, engineRoom: 'ER3', status: 'Standby', flowRate: 100 },
     { id: 53, number: 21, engineRoom: 'ER3', status: 'Running', flowRate: 100, runningTime: '7h 15m 10s' },
-    { id: 54, number: 22, engineRoom: 'ER3', status: 'Standby', flowRate: 100, runningTime: '0h 0m 0s' },
+    { id: 54, number: 22, engineRoom: 'ER3', status: 'Standby', flowRate: 100 },
   ],
   Mapleton: [],
 };
@@ -402,7 +402,7 @@ export default function EngineRooms() {
 
     setPumps((prev) =>
       prev.map((p) =>
-        p.id === pumpId ? { ...p, status: newStatus, flowRate: flow, runningTime: '0h 0m 0s' } : p
+        p.id === pumpId ? { ...p, status: newStatus, flowRate: flow } : p
       )
     );
     pendingPumpsRef.current.add(pumpId);
@@ -441,7 +441,7 @@ export default function EngineRooms() {
     setTrippedMap((t) => ({ ...t, [pumpId]: !wasTripped }));
     setPumps((prev) =>
       prev.map((p) =>
-        p.id === pumpId ? { ...p, status: newStatus, flowRate: 0, runningTime: '0h 0m 0s' } : p
+        p.id === pumpId ? { ...p, status: newStatus, flowRate: 0 } : p
       )
     );
     pendingPumpsRef.current.add(pumpId);
@@ -467,7 +467,7 @@ export default function EngineRooms() {
     setTrippedMap((t) => ({ ...t, [pumpId]: false }));
     setPumps((prev) =>
       prev.map((p) =>
-        p.id === pumpId ? { ...p, status: newStatus, flowRate: 0, runningTime: '0h 0m 0s' } : p
+        p.id === pumpId ? { ...p, status: newStatus, flowRate: 0 } : p
       )
     );
     pendingPumpsRef.current.add(pumpId);
