@@ -77,6 +77,30 @@ export function AuthProvider({ children }) {
     approvedPlants,
   };
 
+  // Auto-logout after 2.5 hours of inactivity
+  useEffect(() => {
+    if (!token) return;
+    let timeoutId;
+    const TIMEOUT_MS = 2.5 * 60 * 60 * 1000; // 2.5 hours
+    
+    const resetTimer = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        console.warn('Auto-logout due to inactivity');
+        logout();
+      }, TIMEOUT_MS);
+    };
+    
+    const events = ['mousemove', 'keydown', 'click', 'scroll'];
+    events.forEach(e => window.addEventListener(e, resetTimer));
+    resetTimer();
+    
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      events.forEach(e => window.removeEventListener(e, resetTimer));
+    };
+  }, [token, logout]);
+
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

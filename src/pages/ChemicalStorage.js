@@ -583,7 +583,7 @@ export default function ChemicalStorage() {
           p: 2, '&:last-child': { pb: 2 },
           display: 'flex', flexDirection: 'column', alignItems: 'center',
         }}>
-          <CylinderSVG number={displayNumberFor(currentPlant, cyl.roomNumber, cyl.slotNumber)} status={cyl.status} size={68} />
+          <CylinderSVG number={displayNumberFor(currentPlant, cyl.roomNumber, cyl.slotNumber)} status={cyl.status} size={51} />
 
           <Chip
             label={cyl.status}
@@ -922,7 +922,7 @@ export default function ChemicalStorage() {
                           level={tank.level}
                           maxLiters={tank.maxLiters}
                           status={tank.status}
-                          width={140}
+                          width={105}
                         />
                       </Box>
 

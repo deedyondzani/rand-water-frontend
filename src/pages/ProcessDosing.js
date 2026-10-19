@@ -329,7 +329,7 @@ export default function ProcessDosing() {
                 {[
                   'Lines', 'Magflow (m³/h)', 'Free Cl₂ (mg/L)', 'Diff (1.9 − Cl₂)',
                   'Time', 'Cl₂ Req (kg/h)', 'Cl₂ Act (kg/h)', 'Diff Cl₂',
-                  'NH₃ Req (kg/h)', 'NH₃ Act (kg/h)', 'Diff NH₃', 'SPC Comments',
+                  'NH₃ Req (L/h)', 'NH₃ Act (L/h)', 'Diff NH₃', 'SPC Comments',
                 ].map((h, i) => (
                   <TableCell
                     key={i}
